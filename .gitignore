@@ -1,0 +1,24 @@
+# Credentials - NEVER commit real passwords
+snowflake_config.py
+.env
+.aws/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

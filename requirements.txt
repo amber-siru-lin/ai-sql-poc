@@ -1,0 +1,3 @@
+langchain-aws>=0.2.0
+snowflake-connector-python>=3.0.0
+boto3>=1.28.0
