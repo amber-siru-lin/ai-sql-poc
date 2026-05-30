@@ -1,0 +1,3 @@
+#!/bin/bash
+# Use Anaconda Python — plain `python` on this Mac points at Homebrew (no packages).
+exec /opt/anaconda3/bin/python "$@"

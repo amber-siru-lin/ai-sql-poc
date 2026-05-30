@@ -1,0 +1,50 @@
+# --- Secrets & local config (NEVER commit) ---
+.env
+.env.*
+!.env.example
+config/snowflake_config.py
+**/snowflake_config.py
+!config/snowflake_config.example.py
+*.pem
+*.key
+credentials.json
+.aws/credentials
+
+# --- Local runtime artifacts ---
+config/working_model.txt
+working_model.txt
+.local/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Node (future Amplify phase) ---
+node_modules/
+.amplify/
+amplify_outputs.json
+
+# --- OS & editors ---
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# --- Unrelated local tooling (not part of this POC repo) ---
+.agents/
+.opencode/

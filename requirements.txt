@@ -1,0 +1,12 @@
+# AI SQL POC — Python dependencies
+# Install: python -m pip install -r requirements.txt
+
+# Phase 1: baseline NL→SQL
+langchain
+langchain-aws
+snowflake-connector-python
+boto3
+
+# Phase 2: Deep Agents upgrade
+deepagents
+langgraph
