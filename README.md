@@ -83,9 +83,34 @@ Type `clear` in the REPL to reset conversation memory.
 
 ## Phase 3 — Web UI (CopilotKit, local)
 
+**Files:** `ui/` · `api/` · `src/agent_factory.py` (shared with Phase 2 CLI)
+
 **Active path:** CopilotKit + Vite in `ui/`, FastAPI agent server in `api/`. Reuses `src/` Python logic. No AWS deploy required.
 
 **Parked path:** `web/` Amplify Gen 2 — blocked on CDK bootstrap ([learnings](docs/solutions/aws-amplify-cdk-bootstrap-blocked.md)).
+
+### Install (first time)
+
+```bash
+scripts/py -m pip install -r requirements.txt
+cd ui && npm install && cd ..
+```
+
+### Run — two terminals
+
+```bash
+# Terminal 1 — API
+export AWS_PROFILE=Brainfore-Team-Set-654654461736
+aws sso login --profile $AWS_PROFILE
+scripts/py -m uvicorn api.main:app --reload --port 8000
+
+# Terminal 2 — UI
+cd ui && npm run dev
+```
+
+Open **http://localhost:5173** — chat in the **SQL Assistant** panel on the right.
+
+Full steps, restart commands, and troubleshooting: [docs/PHASES.md](docs/PHASES.md#phase-3b--copilotkit-active-local).
 
 | Doc | Purpose |
 |-----|---------|
@@ -93,15 +118,6 @@ Type `clear` in the REPL to reset conversation memory.
 | [CopilotKit learnings](docs/solutions/copilotkit-local-ui-learnings.md) | Errors, fixes, two-URL pattern |
 | [Amplify getting started](docs/PHASE3-AMPLIFY-GETTING-STARTED.md) | When IT unblocks bootstrap |
 | [PHASES.md](docs/PHASES.md) | Phase isolation |
-
-Planned layout:
-
-```
-ui/     # CopilotKit + React (new)
-api/    # FastAPI + AG-UI bridge (new)
-web/    # Amplify scaffold (parked)
-src/    # Python core (unchanged)
-```
 
 ---
 
