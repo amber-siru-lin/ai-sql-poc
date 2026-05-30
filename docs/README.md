@@ -1,5 +1,12 @@
 # Documentation index
 
+## Start here
+
+| Doc | Purpose |
+|-----|---------|
+| [PHASES.md](PHASES.md) | **Which files to run for Phase 1, 2, or 3** |
+| [../README.md](../README.md) | Repo setup and quick commands |
+
 ## Plans (implementation)
 
 | Doc | Purpose |
