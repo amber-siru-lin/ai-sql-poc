@@ -6,7 +6,7 @@ Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**.
 |-------|------|--------|
 | **1** | ChatBedrock single-shot NL→SQL | Done |
 | **2** | LangChain Deep Agents + tools + chat memory | Done |
-| **3** | Amplify web UI | Not started |
+| **3** | Web UI (CopilotKit local) | Working locally — [learnings](docs/solutions/copilotkit-local-ui-learnings.md) |
 
 **Phase-by-phase file guide:** [docs/PHASES.md](docs/PHASES.md)
 
@@ -16,19 +16,22 @@ Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**.
 
 ```
 .
-├── src/                    # Python POC (Phase 1 + 2)
+├── src/                    # Python POC (Phase 1 + 2 + shared agent)
+│   ├── agent_factory.py    # Deep Agent graph (CLI + API)
 │   ├── nl2sql.py           # Phase 1 core: ChatBedrock + Snowflake
 │   ├── run_baseline_test.py
 │   ├── ask_questions.py    # Phase 1 interactive
 │   ├── ask_deep_agent.py   # Phase 2 interactive
 │   ├── agent_streaming.py  # Phase 2 --verbose steps
 │   └── tools/              # Phase 2 Snowflake tools
+├── ui/                     # Phase 3B — CopilotKit + Vite React
+├── api/                    # Phase 3B — FastAPI AG-UI server
 ├── config/                 # Local secrets (snowflake_config.py gitignored)
 ├── schema/                 # tpch_sf1.md — shared by all phases
 ├── scripts/                # py, setup_aws.sh, diagnose_bedrock.py
 ├── sql/                    # Optional Snowflake setup
 ├── docs/                   # Plans + PHASES.md
-└── web/                    # (Phase 3) Amplify app — add when ready
+└── web/                    # Phase 3A (parked) — Amplify Gen 2 scaffold
 ```
 
 ---
@@ -78,18 +81,27 @@ Type `clear` in the REPL to reset conversation memory.
 
 ---
 
-## Phase 3 — Amplify (keep it in this repo)
+## Phase 3 — Web UI (CopilotKit, local)
 
-**Yes — use this same repo.** Add a `web/` folder when you start; do not put Amplify inside Python `src/`.
+**Active path:** CopilotKit + Vite in `ui/`, FastAPI agent server in `api/`. Reuses `src/` Python logic. No AWS deploy required.
 
-Planned structure:
+**Parked path:** `web/` Amplify Gen 2 — blocked on CDK bootstrap ([learnings](docs/solutions/aws-amplify-cdk-bootstrap-blocked.md)).
+
+| Doc | Purpose |
+|-----|---------|
+| [CopilotKit plan](docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md) | Folder layout, phases, architecture |
+| [CopilotKit learnings](docs/solutions/copilotkit-local-ui-learnings.md) | Errors, fixes, two-URL pattern |
+| [Amplify getting started](docs/PHASE3-AMPLIFY-GETTING-STARTED.md) | When IT unblocks bootstrap |
+| [PHASES.md](docs/PHASES.md) | Phase isolation |
+
+Planned layout:
 
 ```
-web/                  # Amplify Gen 2 (React + Lambda)
-backend/              # optional rename of src/ when Phase 3 starts
+ui/     # CopilotKit + React (new)
+api/    # FastAPI + AG-UI bridge (new)
+web/    # Amplify scaffold (parked)
+src/    # Python core (unchanged)
 ```
-
-See [docs/PHASES.md](docs/PHASES.md) for the full layout and rationale.
 
 ---
 

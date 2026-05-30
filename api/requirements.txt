@@ -1,0 +1,11 @@
+# Phase 3 API — install from repo root:
+#   scripts/py -m pip install -r api/requirements.txt
+#
+# Or use root requirements.txt (includes these).
+
+-r ../requirements.txt
+
+fastapi>=0.136
+uvicorn[standard]>=0.48
+copilotkit>=0.1.93
+ag-ui-langgraph>=0.0.37
