@@ -1,0 +1,1 @@
+us.amazon.nova-pro-v1:0
