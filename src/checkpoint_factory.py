@@ -24,47 +24,48 @@ def get_checkpointer():
     return MemorySaver()
 
 
-def init_postgres_checkpointer(conn_string: str) -> None:
-    """Open a connection pool, create LangGraph checkpoint tables, and store the saver."""
+async def init_postgres_checkpointer(conn_string: str) -> None:
+    """Open an async pool, create LangGraph checkpoint tables, and store the saver."""
     global _pool, _checkpointer, _backend
 
     if _checkpointer is not None:
         return
 
-    from langgraph.checkpoint.postgres import PostgresSaver
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
     from psycopg.rows import dict_row
-    from psycopg_pool import ConnectionPool
+    from psycopg_pool import AsyncConnectionPool
 
-    def _configure_conn(conn) -> None:
-        conn.autocommit = True
+    async def _configure_conn(conn) -> None:
+        await conn.set_autocommit(True)
         conn.row_factory = dict_row
 
-    _pool = ConnectionPool(
+    _pool = AsyncConnectionPool(
         conn_string,
         min_size=1,
         max_size=10,
-        open=True,
+        open=False,
         configure=_configure_conn,
     )
-    _checkpointer = PostgresSaver(_pool)
-    _checkpointer.setup()
+    await _pool.open()
+    _checkpointer = AsyncPostgresSaver(_pool)
+    await _checkpointer.setup()
     _backend = "postgres"
 
 
-def init_checkpointer_from_env() -> str:
+async def init_checkpointer_from_env() -> str:
     """Initialize Postgres when ``DATABASE_URL`` is set; otherwise keep MemorySaver."""
     conn = os.environ.get("DATABASE_URL", "").strip()
     if conn:
-        init_postgres_checkpointer(conn)
+        await init_postgres_checkpointer(conn)
         return "postgres"
     return "memory"
 
 
-def shutdown_checkpointer() -> None:
+async def shutdown_checkpointer() -> None:
     """Close the Postgres pool on API shutdown."""
     global _pool, _checkpointer, _backend
     if _pool is not None:
-        _pool.close()
+        await _pool.close()
     _pool = None
     _checkpointer = None
     _backend = "memory"

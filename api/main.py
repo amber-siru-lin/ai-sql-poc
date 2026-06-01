@@ -249,9 +249,9 @@ async def copilotkit_single_endpoint(body: CopilotKitMethodRequest):
 
 
 @app.on_event("startup")
-def startup() -> None:
+async def startup() -> None:
     check_all()
-    init_checkpointer_from_env()
+    await init_checkpointer_from_env()
     from src.checkpoint_factory import get_checkpointer
 
     graph = build_agent_graph(DEFAULT_SEMANTIC_LAYER, checkpointer=get_checkpointer())
@@ -264,5 +264,5 @@ def startup() -> None:
 
 
 @app.on_event("shutdown")
-def shutdown() -> None:
-    shutdown_checkpointer()
+async def shutdown() -> None:
+    await shutdown_checkpointer()

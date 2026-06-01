@@ -50,38 +50,6 @@
   font-size: 0.72rem;
 }
 
-.session-panel__clear {
-  background: var(--surface-hover);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.45rem 0.65rem;
-  width: 100%;
-}
-
-.session-panel__clear:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.session-panel__clear:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
-.session-panel__cleared {
-  background: var(--accent-soft);
-  border-radius: 6px;
-  color: var(--accent);
-  font-size: 0.72rem;
-  line-height: 1.4;
-  margin: 0;
-  padding: 0.45rem 0.55rem;
-}
-
 .session-panel__memory-list {
   display: flex;
   flex-direction: column;
