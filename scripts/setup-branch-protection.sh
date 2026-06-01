@@ -7,7 +7,7 @@ repo="${1:-amber-siru-lin/ai-sql-poc}"
 branch="${2:-main}"
 
 echo "Setting branch protection on ${repo}@${branch}..."
-echo "Requires status checks: gitleaks, block-sensitive-paths"
+echo "Requires status checks: gitleaks, block-sensitive-paths, python-tests, ui-build"
 echo
 
 gh api \
@@ -19,7 +19,9 @@ gh api \
     "strict": true,
     "checks": [
       {"context": "gitleaks", "app_id": null},
-      {"context": "block-sensitive-paths", "app_id": null}
+      {"context": "block-sensitive-paths", "app_id": null},
+      {"context": "python-tests", "app_id": null},
+      {"context": "ui-build", "app_id": null}
     ]
   },
   "enforce_admins": false,
