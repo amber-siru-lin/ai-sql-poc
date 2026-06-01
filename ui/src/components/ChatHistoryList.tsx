@@ -29,7 +29,22 @@ type Props = {
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  /** Sidebar list variant — defaults to NL→SQL chat. */
+  variant?: "chat" | "editor";
 };
+
+const VARIANT_COPY = {
+  chat: {
+    title: "Chat history",
+    empty: "No sessions yet. Ask a question — each run is saved to the audit log.",
+    newTitle: "Start a new conversation",
+  },
+  editor: {
+    title: "Editor history",
+    empty: "No editor sessions yet. Ask the Editor AI about MDL fixes — runs are saved to the audit log.",
+    newTitle: "Start a new editor conversation",
+  },
+} as const;
 
 export function ChatHistoryList({
   activeThreadId,
@@ -39,18 +54,20 @@ export function ChatHistoryList({
   loading = false,
   error = null,
   onRefresh,
+  variant = "chat",
 }: Props) {
   const safeSessions = sessions ?? [];
+  const copy = VARIANT_COPY[variant];
 
   return (
-    <section className="chat-history" aria-label="Chat history">
+    <section className="chat-history" aria-label={copy.title}>
       <div className="chat-history__head">
-        <h2 className="chat-history__title">Chat history</h2>
+        <h2 className="chat-history__title">{copy.title}</h2>
         <button
           type="button"
           className="chat-history__new"
           onClick={onNewChat}
-          title="Start a new conversation"
+          title={copy.newTitle}
         >
           + New
         </button>
@@ -61,13 +78,19 @@ export function ChatHistoryList({
       ) : error ? (
         <p className="chat-history__hint chat-history__hint--error">{error}</p>
       ) : safeSessions.length === 0 ? (
-        <p className="chat-history__hint">
-          No sessions yet. Ask a question — each run is saved to the audit log.
-        </p>
+        <p className="chat-history__hint">{copy.empty}</p>
       ) : (
         <ul className="chat-history__list">
           {safeSessions.map((session: AuditSession) => {
             const active = session.thread_id === activeThreadId;
+            const fileHint =
+              variant === "editor" && session.active_file
+                ? ` · ${session.active_file.split("/").pop()}`
+                : "";
+            const layerHint =
+              variant === "chat" && session.semantic_layer
+                ? ` · ${session.semantic_layer}`
+                : "";
             return (
               <li key={session.thread_id}>
                 <button
@@ -82,7 +105,8 @@ export function ChatHistoryList({
                   <span className="chat-history__item-meta">
                     {formatSessionTime(session.last_timestamp)}
                     {session.run_count > 1 ? ` · ${session.run_count} runs` : ""}
-                    {session.semantic_layer ? ` · ${session.semantic_layer}` : ""}
+                    {layerHint}
+                    {fileHint}
                   </span>
                 </button>
               </li>

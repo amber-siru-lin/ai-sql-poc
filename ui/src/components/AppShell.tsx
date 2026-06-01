@@ -1,8 +1,10 @@
 import type { MutableRefObject } from "react";
+import { useCallback, useState } from "react";
 
 import type {
   AppView,
   AuditConfig,
+  PostgresDockerStatus,
   SemanticLayerMode,
   SemanticLayerStatus,
 } from "../config";
@@ -11,12 +13,15 @@ import { AuditLogsPage } from "./AuditLogsPage";
 import { ChatPane } from "./ChatPane";
 import { ContextSidebar } from "./ContextSidebar";
 import { LeftSidebar } from "./LeftSidebar";
+import { SemanticEditorChat } from "./SemanticEditorChat";
 import { SemanticLayerPage } from "./SemanticLayerPage";
+import { loadRightSidebarOpen, saveRightSidebarOpen } from "../hooks/useRightSidebar";
 import "./AppShell.css";
 
 type Props = {
   apiStatus: string;
   auditStatus: AuditConfig | null;
+  postgresStatus: PostgresDockerStatus | null;
   semanticLayerMode: SemanticLayerMode;
   semanticStatus: SemanticLayerStatus | null;
   onSemanticLayerChange: (mode: SemanticLayerMode) => void;
@@ -34,11 +39,23 @@ type Props = {
   sessions?: AuditSession[];
   sessionsLoading?: boolean;
   sessionsError?: string | null;
+  editorThreadId: string;
+  editorReloadNonce: number;
+  editorOwnerThreadIdRef: MutableRefObject<string>;
+  onEditorThreadIdChange: (nextId: string) => void;
+  onNewEditorChat: () => void;
+  onEditorSessionsChanged: () => void;
+  editorSessions?: AuditSession[];
+  editorSessionsLoading?: boolean;
+  editorSessionsError?: string | null;
+  onFlushChatThread?: () => void;
+  onFlushEditorThread?: () => void;
 };
 
 export function AppShell({
   apiStatus,
   auditStatus,
+  postgresStatus,
   semanticLayerMode,
   semanticStatus,
   onSemanticLayerChange,
@@ -56,12 +73,43 @@ export function AppShell({
   sessions = [],
   sessionsLoading = false,
   sessionsError = null,
+  editorThreadId,
+  editorReloadNonce,
+  editorOwnerThreadIdRef,
+  onEditorThreadIdChange,
+  onNewEditorChat,
+  onEditorSessionsChanged,
+  editorSessions = [],
+  editorSessionsLoading = false,
+  editorSessionsError = null,
+  onFlushChatThread,
+  onFlushEditorThread,
 }: Props) {
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(loadRightSidebarOpen);
+  const showRightRail = activeView === "chat" || activeView === "semantic";
+  const rightRailLabel =
+    activeView === "semantic" ? "Editor AI panel" : "Context panel";
+
+  const toggleRightSidebar = useCallback(() => {
+    setRightSidebarOpen((open) => {
+      if (open) {
+        if (activeView === "semantic") onFlushEditorThread?.();
+        else if (activeView === "chat") onFlushChatThread?.();
+      }
+      const next = !open;
+      saveRightSidebarOpen(next);
+      return next;
+    });
+  }, [activeView, onFlushChatThread, onFlushEditorThread]);
+
   return (
-    <div className="app-layout">
+    <div
+      className={`app-layout${rightSidebarOpen && showRightRail ? "" : " app-layout--right-collapsed"}`}
+    >
       <LeftSidebar
         apiStatus={apiStatus}
         auditStatus={auditStatus}
+        postgresStatus={postgresStatus}
         semanticLayerMode={semanticLayerMode}
         semanticStatus={semanticStatus}
         onSemanticLayerChange={onSemanticLayerChange}
@@ -74,6 +122,13 @@ export function AppShell({
         sessionsLoading={sessionsLoading}
         sessionsError={sessionsError}
         onSessionsRefresh={onSessionsChanged}
+        editorThreadId={editorThreadId}
+        onSelectEditorSession={onEditorThreadIdChange}
+        onNewEditorChat={onNewEditorChat}
+        editorSessions={editorSessions}
+        editorSessionsLoading={editorSessionsLoading}
+        editorSessionsError={editorSessionsError}
+        onEditorSessionsRefresh={onEditorSessionsChanged}
       />
 
       <main className="app-layout__main">
@@ -92,12 +147,37 @@ export function AppShell({
         )}
       </main>
 
-      {activeView === "chat" ? (
-        <ContextSidebar
-          semanticLayerMode={semanticLayerMode}
-          threadId={threadId}
-          onOpenAuditForThread={onOpenAuditForThread}
-        />
+      {showRightRail ? (
+        <div className="app-layout__right-rail">
+          <button
+            type="button"
+            className="app-layout__right-toggle"
+            onClick={toggleRightSidebar}
+            aria-expanded={rightSidebarOpen}
+            aria-controls="app-right-sidebar"
+            title={rightSidebarOpen ? `Hide ${rightRailLabel}` : `Show ${rightRailLabel}`}
+          >
+            <span aria-hidden>{rightSidebarOpen ? "›" : "‹"}</span>
+          </button>
+          {rightSidebarOpen ? (
+            <div id="app-right-sidebar" className="app-layout__right-panel">
+              {activeView === "chat" ? (
+                <ContextSidebar
+                  semanticLayerMode={semanticLayerMode}
+                  threadId={threadId}
+                  onOpenAuditForThread={onOpenAuditForThread}
+                />
+              ) : (
+                <SemanticEditorChat
+                  threadId={editorThreadId}
+                  reloadNonce={editorReloadNonce}
+                  editorOwnerThreadIdRef={editorOwnerThreadIdRef}
+                  onSessionsChanged={onEditorSessionsChanged}
+                />
+              )}
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

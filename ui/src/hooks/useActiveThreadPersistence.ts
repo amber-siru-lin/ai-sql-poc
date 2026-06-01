@@ -28,9 +28,11 @@ export function useActiveThreadPersistence(
   useEffect(() => {
     if (!messages?.length) return;
     if (threadId !== copilotOwnerThreadIdRef.current) return;
+    if (agent?.isRunning) return;
 
     const timer = window.setTimeout(() => {
       if (threadId !== copilotOwnerThreadIdRef.current) return;
+      if (agent?.isRunning) return;
       const storable = toStoredMessages(messages);
       if (storable.length > 0) {
         saveThreadMessages(threadId, storable);
@@ -38,7 +40,17 @@ export function useActiveThreadPersistence(
     }, AUTOSAVE_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [messages, threadId, copilotOwnerThreadIdRef]);
+  }, [messages, threadId, agent?.isRunning, copilotOwnerThreadIdRef, agent]);
+
+  useEffect(() => {
+    if (agent?.isRunning) return;
+    if (!messages?.length) return;
+    if (threadId !== copilotOwnerThreadIdRef.current) return;
+    const storable = toStoredMessages(messages);
+    if (storable.length > 0) {
+      saveThreadMessages(threadId, storable);
+    }
+  }, [agent?.isRunning, messages, threadId, copilotOwnerThreadIdRef, agent]);
 
   return { flush };
 }

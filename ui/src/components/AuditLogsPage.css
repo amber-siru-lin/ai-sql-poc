@@ -180,6 +180,14 @@
   margin: 0 0 1rem;
 }
 
+.audit-detail__reply {
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  white-space: pre-wrap;
+}
+
 .audit-detail__meta {
   display: grid;
   font-size: 0.78rem;

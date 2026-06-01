@@ -31,6 +31,13 @@ function sqlStepSummary(entry: AuditLogEntry): string {
   return `${n} SQL step${n === 1 ? "" : "s"}`;
 }
 
+const SOURCE_FILTER_OPTIONS = [
+  { value: "", label: "All sources" },
+  { value: "api", label: "Chat (api)" },
+  { value: "semantic_editor", label: "Editor AI" },
+  { value: "cli", label: "CLI" },
+] as const;
+
 type Props = {
   filterThreadId?: string;
 };
@@ -40,6 +47,7 @@ export function AuditLogsPage({ filterThreadId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedSource, setSelectedSource] = useState<string>("");
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -49,6 +57,7 @@ export function AuditLogsPage({ filterThreadId }: Props) {
       const params = new URLSearchParams({ limit: "100" });
       if (selectedDate) params.set("date", selectedDate);
       if (filterThreadId) params.set("thread_id", filterThreadId);
+      if (selectedSource) params.set("source", selectedSource);
       const res = await fetch(`${API_URL}/api/audit/logs?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as AuditLogsResponse;
@@ -66,7 +75,7 @@ export function AuditLogsPage({ filterThreadId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, filterThreadId]);
+  }, [selectedDate, selectedSource, filterThreadId]);
 
   useEffect(() => {
     void load();
@@ -104,15 +113,43 @@ export function AuditLogsPage({ filterThreadId }: Props) {
               ))}
             </select>
           </label>
+          <label className="audit-page__filter">
+            <span>Source</span>
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+              aria-label="Filter by source"
+            >
+              {SOURCE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <button type="button" className="audit-page__btn" onClick={() => void load()}>
             Refresh
           </button>
         </div>
       </header>
 
-      {filterThreadId ? (
+      {filterThreadId || selectedSource ? (
         <p className="audit-page__filter-hint">
-          Showing runs for thread <code>{filterThreadId.slice(0, 8)}…</code>
+          {filterThreadId ? (
+            <>
+              Showing runs for thread <code>{filterThreadId.slice(0, 8)}…</code>
+              {selectedSource ? " · " : null}
+            </>
+          ) : null}
+          {selectedSource ? (
+            <>
+              source{" "}
+              <code>
+                {SOURCE_FILTER_OPTIONS.find((o) => o.value === selectedSource)?.label ??
+                  selectedSource}
+              </code>
+            </>
+          ) : null}
         </p>
       ) : null}
 
@@ -123,8 +160,8 @@ export function AuditLogsPage({ filterThreadId }: Props) {
 
       {!loading && !error && data && data.entries.length === 0 ? (
         <p className="audit-page__message">
-          No audit entries yet. Ask a question in chat — each run writes one JSON
-          object to S3 when the bucket is configured.
+          No audit entries match these filters. Runs appear here after chat or editor
+          agent requests when the audit bucket is configured.
         </p>
       ) : null}
 
@@ -162,6 +199,9 @@ export function AuditLogsPage({ filterThreadId }: Props) {
             {selected ? (
               <>
                 <h2 className="audit-detail__question">{selected.question}</h2>
+                {selected.assistant_reply ? (
+                  <div className="audit-detail__reply">{selected.assistant_reply}</div>
+                ) : null}
                 <dl className="audit-detail__meta">
                   <div>
                     <dt>Time</dt>

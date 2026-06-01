@@ -40,6 +40,13 @@ from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.checkpoint_factory import checkpoint_backend, init_checkpointer_from_env, shutdown_checkpointer
 from src.check_setup import check_all
+from src.postgres_docker_status import postgres_docker_status
+from src.semantic_editor.ag_ui_agent import SemanticEditorLangGraphAgent
+from src.semantic_editor.agent import (
+    EDITOR_AGENT_DESCRIPTION,
+    EDITOR_AGENT_NAME,
+    build_editor_agent_graph,
+)
 from src.semantic_editor import (
     SemanticPathError,
     SemanticPrError,
@@ -96,21 +103,29 @@ def audit_logs(
     date: str | None = None,
     limit: int = 50,
     thread_id: str | None = None,
+    source: str | None = None,
 ):
     """List query audit records from S3 (newest first)."""
+    src = source if source and source.lower() != "all" else None
     return {
         "audit": audit_config(),
         "dates": list_audit_dates(),
-        "entries": read_audit_entries(date=date, limit=limit, thread_id=thread_id),
+        "entries": read_audit_entries(
+            date=date,
+            limit=limit,
+            thread_id=thread_id,
+            source=src,
+        ),
     }
 
 
 @app.get("/api/audit/sessions")
-def audit_sessions(limit: int = 30):
-    """List chat sessions grouped by thread_id (from audit log)."""
+def audit_sessions(limit: int = 30, source: str | None = "api"):
+    """List sessions grouped by thread_id (from audit log)."""
+    src = source if source and source.lower() != "all" else None
     return {
         "audit": audit_config(),
-        "sessions": list_audit_sessions(limit=limit),
+        "sessions": list_audit_sessions(limit=limit, source=src),
     }
 
 
@@ -215,6 +230,7 @@ def status():
         "dataset": "TPCH_SF1",
         "semantic_layer": _semantic_layer_status(),
         "audit": audit_config(check_s3=True),
+        "postgres": postgres_docker_status(),
         "checkpoint": {
             "backend": checkpoint_backend(),
             "database_url_configured": bool(os.environ.get("DATABASE_URL", "").strip()),
@@ -261,6 +277,14 @@ async def startup() -> None:
         graph=graph,
     )
     add_langgraph_fastapi_endpoint(app, agent, path="/")
+
+    editor_graph = build_editor_agent_graph(checkpointer=get_checkpointer())
+    editor_agent = SemanticEditorLangGraphAgent(
+        name=EDITOR_AGENT_NAME,
+        description=EDITOR_AGENT_DESCRIPTION,
+        graph=editor_graph,
+    )
+    add_langgraph_fastapi_endpoint(app, editor_agent, path="/semantic-agent")
 
 
 @app.on_event("shutdown")

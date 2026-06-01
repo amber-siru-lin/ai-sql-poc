@@ -13,6 +13,7 @@ export type AuditLogEntry = {
   run_id: string;
   semantic_layer: string;
   question: string | null;
+  assistant_reply?: string | null;
   sql_executions: AuditSqlExecution[];
   status: string;
   duration_ms: number;
@@ -36,6 +37,7 @@ export type AuditSession = {
   run_count: number;
   semantic_layer: string | null;
   last_status: string | null;
+  active_file?: string | null;
 };
 
 export type AuditSessionsResponse = {

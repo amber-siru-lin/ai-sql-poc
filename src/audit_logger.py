@@ -159,8 +159,9 @@ def build_audit_record(
     duration_ms: int,
     error: str | None = None,
     source: str = "api",
+    assistant_reply: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    record: dict[str, Any] = {
         "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "source": source,
         "thread_id": thread_id,
@@ -172,3 +173,6 @@ def build_audit_record(
         "duration_ms": duration_ms,
         "error": error,
     }
+    if assistant_reply and assistant_reply.strip():
+        record["assistant_reply"] = assistant_reply.strip()
+    return record
