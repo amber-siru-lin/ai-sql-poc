@@ -94,23 +94,3 @@
   text-transform: lowercase;
 }
 
-.context-sidebar__cards {
-  gap: 0.65rem;
-}
-
-.context-sidebar__cards .placeholder-panel {
-  min-height: 0;
-}
-
-.context-sidebar__cards .placeholder-panel__body {
-  font-size: 0.78rem;
-  padding: 0.65rem 0.75rem;
-}
-
-.context-sidebar__cards .placeholder-panel__header {
-  padding: 0.6rem 0.75rem;
-}
-
-.context-sidebar__cards .placeholder-panel__header h2 {
-  font-size: 0.82rem;
-}

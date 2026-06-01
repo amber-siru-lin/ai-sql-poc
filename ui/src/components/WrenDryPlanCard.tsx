@@ -1,5 +1,7 @@
+import { CollapsibleStep, InlineAgentStep } from "./CollapsibleStep";
 import { isWrenToolError } from "../utils/parseWrenToolResult";
 import "./SqlToolResultCard.css";
+import "./AgentStep.css";
 
 type Props = {
   modeledSql?: string;
@@ -11,13 +13,7 @@ export function WrenDryPlanCard({ modeledSql, planText, status }: Props) {
   const loading = !String(status).toLowerCase().includes("complete");
 
   if (loading) {
-    return (
-      <div className="sql-tool-card sql-tool-card--loading sql-tool-card--wren">
-        <ToolCardHeader title="Wren · dry plan" status={status} />
-        {modeledSql ? <pre className="sql-tool-card__sql">{modeledSql}</pre> : null}
-        <span className="sql-tool-card__status-text">Expanding through MDL…</span>
-      </div>
-    );
+    return <InlineAgentStep label="Wren · expanding SQL through MDL…" />;
   }
 
   if (!planText) {
@@ -39,20 +35,18 @@ export function WrenDryPlanCard({ modeledSql, planText, status }: Props) {
     );
   }
 
+  const preview = planText.replace(/\s+/g, " ").slice(0, 72);
   return (
-    <div className="sql-tool-card sql-tool-card--wren">
-      <ToolCardHeader title="Wren · dry plan" status={status} />
+    <CollapsibleStep title="Wren · dry plan" preview={preview ? `${preview}…` : "Expanded SQL"}>
       {modeledSql ? (
-        <section className="sql-tool-card__section">
-          <h4 className="sql-tool-card__section-title">Modeled SQL</h4>
-          <pre className="sql-tool-card__sql">{modeledSql}</pre>
-        </section>
+        <>
+          <p className="sql-tool-card__section-title">Modeled SQL</p>
+          <pre>{modeledSql}</pre>
+        </>
       ) : null}
-      <section className="sql-tool-card__section">
-        <h4 className="sql-tool-card__section-title">Expanded SQL</h4>
-        <pre className="sql-tool-card__sql sql-tool-card__sql--expanded">{planText}</pre>
-      </section>
-    </div>
+      <p className="sql-tool-card__section-title">Expanded SQL</p>
+      <pre>{planText}</pre>
+    </CollapsibleStep>
   );
 }
 

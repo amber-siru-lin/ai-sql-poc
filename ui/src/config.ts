@@ -21,12 +21,22 @@ export type SemanticLayerStatus = {
   cortex_message: string;
 };
 
+export type AuditConfig = {
+  s3_bucket: string | null;
+  s3_prefix: string;
+  local_dir: string;
+  enabled: boolean;
+};
+
 export type ApiStatusResponse = {
   status: string;
   agent: string;
   dataset: string;
   semantic_layer: SemanticLayerStatus;
+  audit?: AuditConfig;
 };
+
+export type AppView = "chat" | "audit";
 
 export const SAMPLE_QUESTIONS = [
   "What is the total amount of all orders?",

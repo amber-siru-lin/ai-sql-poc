@@ -186,7 +186,8 @@ Not in scope until local path works.
 
 - [x] `ui/` + `api/` run locally with SSO (no CDK bootstrap)
 - [x] Chat answers TPCH questions (Deep Agent via AG-UI)
-- [ ] Tool calls visible in UI (SQL execution steps) — Phase 3.3
+- [x] Tool calls visible in UI (SQL execution steps) — Phase 3.3 (inline chat cards)
+- [x] Session clear + memory explanation — Phase 3.4
 - [x] Phase 1/2 CLI scripts still work unchanged
 - [x] `web/` Amplify scaffold untouched (parked)
 

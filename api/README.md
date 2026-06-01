@@ -2,7 +2,8 @@
 
 Exposes the Phase 2 Deep Agent to the browser via **AG-UI** (`ag-ui-langgraph`). CopilotKit in `ui/` uses a local `HttpAgent` for chat plus a small **runtime stub** for CopilotKit sync.
 
-**Integration learnings:** [docs/solutions/copilotkit-local-ui-learnings.md](../docs/solutions/copilotkit-local-ui-learnings.md)
+**Integration learnings:** [docs/solutions/copilotkit-local-ui-learnings.md](../docs/solutions/copilotkit-local-ui-learnings.md)  
+**Query audit logs:** [docs/audit-logs/README.md](../docs/audit-logs/README.md)
 
 ## Run
 
@@ -13,6 +14,11 @@ export AWS_PROFILE=Brainfore-Team-Set-654654461736
 aws sso login --profile $AWS_PROFILE
 
 scripts/py scripts/sync_wren_profile.py   # optional, for Wren mode
+
+# Optional audit → S3 (local logs/audit/*.jsonl always)
+export AUDIT_S3_BUCKET=cta-poc-ai-sql-audit-dev-654654461736
+# or add AUDIT_S3_BUCKET=... to repo-root .env (loaded on API startup)
+
 scripts/py -m uvicorn api.main:app --reload --port 8000
 ```
 
@@ -21,6 +27,7 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 | Path | Purpose |
 |------|---------|
 | `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) |
+| `GET /api/audit/logs` | Query audit JSONL for UI (`?date=`, `?limit=`, `?thread_id=`) |
 | `POST /` | **AG-UI agent runs** (SSE stream) — used by `HttpAgent` |
 | `GET /copilotkit/info` | CopilotKit runtime info (REST transport) |
 | `POST /copilotkit` | CopilotKit single-endpoint info (`{"method":"info"}`) |

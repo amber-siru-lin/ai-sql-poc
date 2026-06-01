@@ -194,6 +194,14 @@ VITE_COPILOT_RUNTIME_URL=http://localhost:8000/copilotkit
 
 See `ui/.env.example`.
 
+#### Phase 3.4 — Session & memory (UI)
+
+- **Clear conversation** — Right sidebar starts a new LangGraph `thread_id` and resets chat.
+- **Semantic mode change** — Also starts a new thread (avoids mixed tool/prompt state).
+- **Memory docs in UI** — Explains LangGraph `MemorySaver`, Wren LanceDB under `wren/tpch/target/`, and retry counters.
+
+**Where queries/logs live:** [architecture/query-and-memory-storage.md](architecture/query-and-memory-storage.md) — nothing is persisted to a repo query log; Snowflake keeps warehouse history.
+
 #### Troubleshooting
 
 | Symptom | See |
