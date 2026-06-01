@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
-import { CopilotSidebar } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 
-import { AnalysisWorkspace } from "./components/AnalysisWorkspace";
+import { AppShell } from "./components/AppShell";
 import { CopilotToolRenderers } from "./components/CopilotToolRenderers";
-import { SemanticLayerToggle } from "./components/SemanticLayerToggle";
 import {
   AGENT_ID,
   API_URL,
@@ -14,7 +12,6 @@ import {
 } from "./config";
 import { useSemanticLayerMode } from "./hooks/useSemanticLayerMode";
 import { createSemanticHttpAgent } from "./lib/httpAgent";
-import "./App.css";
 
 const CHAT_INSTRUCTIONS = `You are helping a business user explore the Snowflake TPCH_SF1 dataset.
 Use the active semantic layer mode (Off, Wren, or Cortex) as described in your system prompt.
@@ -53,43 +50,17 @@ export default function App() {
       runtimeUrl={COPILOT_RUNTIME_URL}
       agents__unsafe_dev_only={agents as never}
       agent={AGENT_ID}
+      showDevConsole={false}
+      enableInspector={false}
     >
-      <CopilotSidebar
-        defaultOpen
-        clickOutsideToClose={false}
-        instructions={CHAT_INSTRUCTIONS}
-        labels={{
-          title: "SQL Assistant",
-          initial: "Ask a question about TPCH_SF1…",
-        }}
-      >
-        <CopilotToolRenderers />
-        <div className="app-shell">
-          <header className="app-header">
-            <div>
-              <p className="app-header__eyebrow">AI SQL POC · Phase 3</p>
-              <h1>Natural language → Snowflake</h1>
-            </div>
-            <div className="app-header__meta">
-              <SemanticLayerToggle
-                mode={semanticLayerMode}
-                status={semanticStatus}
-                onChange={setSemanticLayerMode}
-              />
-              <span
-                className={`status-pill status-pill--${apiStatus === "connected" ? "ok" : "warn"}`}
-              >
-                API {apiStatus}
-              </span>
-              <span className="status-pill">Nova Pro · TPCH_SF1</span>
-            </div>
-          </header>
-
-          <main className="app-main">
-            <AnalysisWorkspace semanticLayerMode={semanticLayerMode} />
-          </main>
-        </div>
-      </CopilotSidebar>
+      <CopilotToolRenderers />
+      <AppShell
+        apiStatus={apiStatus}
+        semanticLayerMode={semanticLayerMode}
+        semanticStatus={semanticStatus}
+        onSemanticLayerChange={setSemanticLayerMode}
+        chatInstructions={CHAT_INSTRUCTIONS}
+      />
     </CopilotKit>
   );
 }
