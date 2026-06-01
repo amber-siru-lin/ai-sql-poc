@@ -1,3 +1,5 @@
+import type { MutableRefObject } from "react";
+
 import type {
   AppView,
   AuditConfig,
@@ -21,6 +23,7 @@ type Props = {
   chatInstructions: string;
   threadId: string;
   reloadNonce: number;
+  copilotOwnerThreadIdRef: MutableRefObject<string>;
   onThreadIdChange: (nextId: string) => void;
   activeView: AppView;
   onViewChange: (view: AppView) => void;
@@ -42,6 +45,7 @@ export function AppShell({
   chatInstructions,
   threadId,
   reloadNonce,
+  copilotOwnerThreadIdRef,
   onThreadIdChange,
   activeView,
   onViewChange,
@@ -78,6 +82,7 @@ export function AppShell({
             threadId={threadId}
             reloadNonce={reloadNonce}
             chatInstructions={chatInstructions}
+            copilotOwnerThreadIdRef={copilotOwnerThreadIdRef}
             onSessionsChanged={onSessionsChanged}
           />
         ) : activeView === "audit" ? (
@@ -91,7 +96,6 @@ export function AppShell({
         <ContextSidebar
           semanticLayerMode={semanticLayerMode}
           threadId={threadId}
-          onThreadIdChange={onThreadIdChange}
           onOpenAuditForThread={onOpenAuditForThread}
         />
       ) : null}

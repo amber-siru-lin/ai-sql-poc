@@ -1,11 +1,18 @@
-import { useCopilotChatHeadless_c } from "@copilotkit/react-core";
+import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useRef } from "react";
 
 import { saveThreadMessages, toStoredMessages } from "../lib/chatPersistence";
+import { useSqlAgent } from "./useSqlAgent";
+
+const AUTOSAVE_DEBOUNCE_MS = 400;
 
 /** Persist the active thread's messages; expose flush() for save-before-switch. */
-export function useActiveThreadPersistence(threadId: string) {
-  const { messages } = useCopilotChatHeadless_c();
+export function useActiveThreadPersistence(
+  threadId: string,
+  copilotOwnerThreadIdRef: MutableRefObject<string>,
+) {
+  const { agent } = useSqlAgent({ watchMessages: true });
+  const messages = agent?.messages;
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const threadIdRef = useRef(threadId);
@@ -20,11 +27,18 @@ export function useActiveThreadPersistence(threadId: string) {
 
   useEffect(() => {
     if (!messages?.length) return;
-    const storable = toStoredMessages(messages);
-    if (storable.length > 0) {
-      saveThreadMessages(threadId, storable);
-    }
-  }, [messages, threadId]);
+    if (threadId !== copilotOwnerThreadIdRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      if (threadId !== copilotOwnerThreadIdRef.current) return;
+      const storable = toStoredMessages(messages);
+      if (storable.length > 0) {
+        saveThreadMessages(threadId, storable);
+      }
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [messages, threadId, copilotOwnerThreadIdRef]);
 
   return { flush };
 }

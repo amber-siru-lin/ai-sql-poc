@@ -1,15 +1,18 @@
 import { fetchAuditMessagesForThread } from "./fetchAuditMessages";
 import { loadThreadMessages, type StoredChatMessage } from "./chatPersistence";
 
-/** Load chat transcript for a thread: browser snapshot first, then audit fallback. */
+/** Load chat transcript for a thread: merge browser snapshot with audit fallback. */
 export async function resolveThreadMessages(
   threadId: string,
 ): Promise<StoredChatMessage[]> {
   const local = loadThreadMessages(threadId);
-  if (local.length > 0) return local;
+  let audit: StoredChatMessage[] = [];
   try {
-    return await fetchAuditMessagesForThread(threadId);
+    audit = await fetchAuditMessagesForThread(threadId);
   } catch {
-    return [];
+    audit = [];
   }
+  if (local.length === 0) return audit;
+  if (audit.length === 0) return local;
+  return local.length >= audit.length ? local : audit;
 }

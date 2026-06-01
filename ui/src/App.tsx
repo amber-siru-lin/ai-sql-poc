@@ -39,6 +39,7 @@ export default function App() {
   const semanticLayerRef = useRef(semanticLayerMode);
   semanticLayerRef.current = semanticLayerMode;
   const flushActiveThreadRef = useRef<() => void>(() => {});
+  const copilotOwnerThreadIdRef = useRef(threadId);
   const [activeView, setActiveView] = useState<AppView>("chat");
   const [auditThreadFilter, setAuditThreadFilter] = useState<string | undefined>();
   const { sessions, loading: sessionsLoading, error: sessionsError, refresh: refreshSessions } =
@@ -111,14 +112,17 @@ export default function App() {
     <CopilotKit
       key={semanticLayerMode}
       runtimeUrl={COPILOT_RUNTIME_URL}
-      threadId={threadId}
       agents__unsafe_dev_only={agents as never}
       agent={AGENT_ID}
       showDevConsole={false}
       enableInspector={false}
     >
       <CopilotToolRenderers />
-      <ActiveThreadFlushBridge threadId={threadId} flushRef={flushActiveThreadRef} />
+      <ActiveThreadFlushBridge
+        threadId={threadId}
+        flushRef={flushActiveThreadRef}
+        copilotOwnerThreadIdRef={copilotOwnerThreadIdRef}
+      />
       <AppShell
         apiStatus={apiStatus}
         auditStatus={auditStatus}
@@ -128,6 +132,7 @@ export default function App() {
         chatInstructions={CHAT_INSTRUCTIONS}
         threadId={threadId}
         reloadNonce={reloadNonce}
+        copilotOwnerThreadIdRef={copilotOwnerThreadIdRef}
         onThreadIdChange={selectThread}
         activeView={activeView}
         onViewChange={handleViewChange}

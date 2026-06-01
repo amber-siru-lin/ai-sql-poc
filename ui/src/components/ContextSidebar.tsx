@@ -1,6 +1,7 @@
-import { useCopilotChatHeadless_c } from "@copilotkit/react-core";
+import { useCopilotKit } from "@copilotkit/react-core/v2";
 
 import { SAMPLE_QUESTIONS, type SemanticLayerMode } from "../config";
+import { useSqlAgent } from "../hooks/useSqlAgent";
 import { SessionPanel } from "./SessionPanel";
 import "./ContextSidebar.css";
 
@@ -13,25 +14,28 @@ const MODE_HINT: Record<SemanticLayerMode, string> = {
 type Props = {
   semanticLayerMode: SemanticLayerMode;
   threadId: string;
-  onThreadIdChange: (nextId: string) => void;
   onOpenAuditForThread?: () => void;
 };
 
 export function ContextSidebar({
   semanticLayerMode,
   threadId,
-  onThreadIdChange,
   onOpenAuditForThread,
 }: Props) {
-  const { sendMessage, isLoading } = useCopilotChatHeadless_c();
+  const { agent } = useSqlAgent();
+  const { copilotkit } = useCopilotKit();
+  const isLoading = Boolean(agent?.isRunning);
 
   const ask = (question: string) => {
-    if (isLoading) return;
-    void sendMessage({
-      id: crypto.randomUUID(),
-      role: "user",
-      content: question,
-    });
+    if (!agent || isLoading) return;
+    void (async () => {
+      agent.addMessage({
+        id: crypto.randomUUID(),
+        role: "user",
+        content: question,
+      });
+      await copilotkit.runAgent({ agent });
+    })();
   };
 
   return (
@@ -69,7 +73,6 @@ export function ContextSidebar({
         <SessionPanel
           semanticLayerMode={semanticLayerMode}
           threadId={threadId}
-          onThreadIdChange={onThreadIdChange}
           onViewAuditLogs={onOpenAuditForThread}
         />
       </section>

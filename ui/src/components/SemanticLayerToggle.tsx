@@ -33,7 +33,7 @@ export function SemanticLayerToggle({ mode, status, onChange }: Props) {
           <button
             key={value}
             type="button"
-            className={`semantic-toggle__btn${mode === value ? " semantic-toggle__btn--active" : ""}`}
+            className={`semantic-toggle__btn${mode === value ? " semantic-toggle__btn--active" : ""}${disabled ? " semantic-toggle__btn--disabled" : ""}`}
             aria-pressed={mode === value}
             disabled={disabled}
             title={title}
@@ -43,6 +43,16 @@ export function SemanticLayerToggle({ mode, status, onChange }: Props) {
           </button>
         );
       })}
+      {status && !status.wren_ready ? (
+        <p className="semantic-toggle__hint" title={status.wren_message}>
+          Wren: {status.wren_message}
+        </p>
+      ) : null}
+      {status && !status.cortex_ready ? (
+        <p className="semantic-toggle__hint" title={status.cortex_message}>
+          Cortex: {status.cortex_message}
+        </p>
+      ) : null}
     </div>
   );
 }

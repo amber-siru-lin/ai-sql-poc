@@ -1,5 +1,5 @@
 import type { SemanticLayerMode } from "../config";
-import { useChatSession } from "../hooks/useChatSession";
+import { useSqlAgent } from "../hooks/useSqlAgent";
 import "./SessionPanel.css";
 
 const AUDIT_BUCKET = "cta-poc-ai-sql-audit-dev-654654461736";
@@ -27,7 +27,7 @@ const MEMORY_COMMON: { title: string; detail: string }[] = [
   {
     title: "Chat history (sidebar)",
     detail:
-      "Past sessions are grouped by thread ID from the audit log (API runs only). Selecting one reuses that thread ID; server follow-ups apply only while the API still holds that checkpoint.",
+      "Past sessions are grouped by thread ID from the audit log (API runs only). Selecting one reuses that thread ID; server follow-ups apply only while the API still holds that checkpoint. Use + New to start a fresh session.",
   },
   {
     title: "SQL retries",
@@ -54,22 +54,16 @@ const MEMORY_LAYERS: Record<
 type Props = {
   semanticLayerMode: SemanticLayerMode;
   threadId: string;
-  onThreadIdChange: (nextId: string) => void;
   onViewAuditLogs?: () => void;
 };
 
 export function SessionPanel({
   semanticLayerMode,
   threadId,
-  onThreadIdChange,
   onViewAuditLogs,
 }: Props) {
-  const {
-    messageCount,
-    isLoading,
-    lastClearedAt,
-    startNewConversation,
-  } = useChatSession(threadId, onThreadIdChange);
+  const { agent } = useSqlAgent({ watchMessages: true });
+  const messageCount = agent?.messages?.length ?? 0;
 
   const shortThread =
     threadId.length > 12 ? `${threadId.slice(0, 8)}…${threadId.slice(-4)}` : threadId;
@@ -90,20 +84,6 @@ export function SessionPanel({
           <dd>{messageCount}</dd>
         </div>
       </dl>
-
-      <button
-        type="button"
-        className="session-panel__clear"
-        disabled={isLoading}
-        onClick={startNewConversation}
-      >
-        Clear conversation
-      </button>
-      {lastClearedAt ? (
-        <p className="session-panel__cleared" role="status">
-          New thread started — prior follow-up context on the server is no longer used.
-        </p>
-      ) : null}
 
       <h3 className="session-panel__subtitle">Where memory lives</h3>
       <ul className="session-panel__memory-list">
