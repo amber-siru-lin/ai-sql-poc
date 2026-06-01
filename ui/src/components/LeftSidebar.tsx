@@ -59,6 +59,13 @@ export function LeftSidebar({
         >
           Audit logs
         </button>
+        <button
+          type="button"
+          className={`left-sidebar__nav-btn${activeView === "semantic" ? " left-sidebar__nav-btn--active" : ""}`}
+          onClick={() => onViewChange("semantic")}
+        >
+          Semantic layer
+        </button>
       </nav>
 
       <section className="left-sidebar__section">

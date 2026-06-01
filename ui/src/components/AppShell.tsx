@@ -3,6 +3,7 @@ import { CopilotChat } from "@copilotkit/react-ui";
 import type { AppView, SemanticLayerMode, SemanticLayerStatus } from "../config";
 import type { AuditSession } from "../types/audit";
 import { AuditLogsPage } from "./AuditLogsPage";
+import { SemanticLayerPage } from "./SemanticLayerPage";
 import { AssistantMessage } from "./AssistantMessage";
 import { ChatSessionRestore } from "./ChatSessionRestore";
 import { chatMarkdownTagRenderers } from "./chatMarkdownRenderers";
@@ -75,8 +76,10 @@ export function AppShell({
               markdownTagRenderers={chatMarkdownTagRenderers}
             />
           </div>
-        ) : (
+        ) : activeView === "audit" ? (
           <AuditLogsPage filterThreadId={auditThreadFilter} />
+        ) : (
+          <SemanticLayerPage activeSemanticMode={semanticLayerMode} />
         )}
       </main>
 

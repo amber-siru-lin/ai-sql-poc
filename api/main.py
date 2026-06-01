@@ -39,6 +39,7 @@ from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
 from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.check_setup import check_all
+from src.semantic_editor import build_consumers_response
 from src.semantic_layer.types import SEMANTIC_LAYER_MODES, DEFAULT_SEMANTIC_LAYER
 from src.tools.cortex_tools import cortex_ready
 from src.tools.wren_tools import wren_ready
@@ -99,6 +100,13 @@ def audit_sessions(limit: int = 30):
         "audit": audit_config(),
         "sessions": list_audit_sessions(limit=limit),
     }
+
+
+@app.get("/api/semantic/consumers")
+def semantic_consumers():
+    """Manifest of runtime consumers and git paths for the semantic layer editor."""
+    status_block = _semantic_layer_status()
+    return build_consumers_response(status_block)
 
 
 @app.get("/api/status")
