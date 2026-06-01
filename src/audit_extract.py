@@ -13,8 +13,11 @@ except ImportError:
     from langchain.schema import AIMessage, BaseMessage, HumanMessage, ToolMessage  # type: ignore
 
 
-def _message_content(msg: BaseMessage) -> str:
-    content = getattr(msg, "content", "") or ""
+def _message_content(msg: Any) -> str:
+    if isinstance(msg, dict):
+        content = msg.get("content", "") or ""
+    else:
+        content = getattr(msg, "content", "") or ""
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -28,17 +31,62 @@ def _message_content(msg: BaseMessage) -> str:
     return str(content)
 
 
+def _message_type(msg: Any) -> str | None:
+    if isinstance(msg, dict):
+        raw = msg.get("type") or msg.get("role")
+        return str(raw) if raw is not None else None
+    return getattr(msg, "type", None)
+
+
+def _is_human_message(msg: Any) -> bool:
+    if isinstance(msg, HumanMessage):
+        return True
+    kind = _message_type(msg)
+    if kind in ("human", "HumanMessage", "user"):
+        return True
+    return isinstance(msg, dict) and msg.get("role") == "user"
+
+
+def _is_ai_message(msg: Any) -> bool:
+    if isinstance(msg, AIMessage):
+        return True
+    kind = _message_type(msg)
+    if kind in ("ai", "AIMessage", "assistant"):
+        return True
+    return isinstance(msg, dict) and msg.get("role") == "assistant"
+
+
 def last_user_question(messages: list[Any]) -> str | None:
     for msg in reversed(messages):
-        if isinstance(msg, HumanMessage) or getattr(msg, "type", None) == "human":
+        if _is_human_message(msg):
             text = _message_content(msg).strip()
             if text:
                 return text
-        if isinstance(msg, dict) and msg.get("role") == "user":
-            text = str(msg.get("content", "")).strip()
-            if text:
-                return text
     return None
+
+
+def last_assistant_reply(messages: list[Any]) -> str | None:
+    """Assistant prose after the final user turn (for audit transcript restore)."""
+    last_human_idx = -1
+    for i, msg in enumerate(messages):
+        if _is_human_message(msg):
+            last_human_idx = i
+
+    if last_human_idx < 0:
+        return None
+
+    parts: list[str] = []
+    for msg in messages[last_human_idx + 1 :]:
+        if _is_human_message(msg):
+            break
+        if _is_ai_message(msg):
+            text = _message_content(msg).strip()
+            if text:
+                parts.append(text)
+
+    if not parts:
+        return None
+    return "\n\n".join(parts)
 
 
 def _sql_from_tool_call(tc: dict[str, Any]) -> str | None:

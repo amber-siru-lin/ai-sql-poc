@@ -1,5 +1,5 @@
 import { fetchAuditMessagesForThread } from "./fetchAuditMessages";
-import { loadThreadMessages, type StoredChatMessage } from "./chatPersistence";
+import { loadThreadMessages, mergeLocalAndAuditTranscripts, type StoredChatMessage } from "./chatPersistence";
 
 /** Load chat transcript for a thread: merge browser snapshot with audit fallback. */
 export async function resolveThreadMessages(
@@ -14,5 +14,5 @@ export async function resolveThreadMessages(
   }
   if (local.length === 0) return audit;
   if (audit.length === 0) return local;
-  return local.length >= audit.length ? local : audit;
+  return mergeLocalAndAuditTranscripts(local, audit);
 }

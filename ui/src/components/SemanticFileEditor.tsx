@@ -25,6 +25,15 @@ export function SemanticFileEditor() {
   } = useSemanticFiles();
 
   useEffect(() => {
+    if (!selectedPath) return;
+    window.dispatchEvent(
+      new CustomEvent("semantic-editor-active-file", {
+        detail: { path: selectedPath, content },
+      }),
+    );
+  }, [selectedPath, content]);
+
+  useEffect(() => {
     const handler = (e: Event) => {
       const path = (e as CustomEvent<{ path: string }>).detail?.path;
       if (path) selectPath(path);

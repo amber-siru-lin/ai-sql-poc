@@ -1,14 +1,15 @@
 .context-sidebar {
   background: var(--sidebar-bg);
-  border-left: 1px solid var(--border);
+  border-left: none;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 1.1rem;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
   padding: 1rem 0.85rem 1.5rem;
-  width: var(--context-width);
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .context-sidebar__section {

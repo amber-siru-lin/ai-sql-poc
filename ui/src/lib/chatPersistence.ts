@@ -42,13 +42,28 @@ export function toStoredMessages(messages: unknown): StoredChatMessage[] {
   const stored: StoredChatMessage[] = [];
   for (const m of messages) {
     if (!m || typeof m !== "object") continue;
-    const msg = m as { id?: string; role?: string; content?: unknown };
-    if (msg.role !== "user" && msg.role !== "assistant" && msg.role !== "system") {
+    const msg = m as {
+      id?: string;
+      role?: string;
+      type?: string;
+      content?: unknown;
+      text?: string;
+    };
+    const role =
+      msg.role ??
+      (msg.type === "human" || msg.type === "HumanMessage"
+        ? "user"
+        : msg.type === "ai" || msg.type === "AIMessage"
+          ? "assistant"
+          : msg.type);
+    if (role !== "user" && role !== "assistant" && role !== "system") {
       continue;
     }
     if (!msg.id) continue;
     let content = "";
-    if (typeof msg.content === "string") {
+    if (typeof msg.text === "string" && msg.text.trim()) {
+      content = msg.text;
+    } else if (typeof msg.content === "string") {
       content = msg.content;
     } else if (Array.isArray(msg.content)) {
       content = msg.content
@@ -68,15 +83,39 @@ export function toStoredMessages(messages: unknown): StoredChatMessage[] {
       content = JSON.stringify(msg.content);
     }
     // Keep user messages even if assistant/tool payloads are empty.
-    if (!content.trim() && msg.role !== "user") continue;
+    if (!content.trim() && role !== "user") continue;
     if (!content.trim()) content = "(empty message)";
     stored.push({
       id: msg.id,
-      role: msg.role as StoredChatMessage["role"],
+      role: role as StoredChatMessage["role"],
       content,
     });
   }
   return stored;
+}
+
+export function transcriptsMatch(
+  current: unknown,
+  loaded: StoredChatMessage[],
+): boolean {
+  const stored = toStoredMessages(current);
+  if (stored.length !== loaded.length) return false;
+  for (let i = 0; i < stored.length; i++) {
+    if (stored[i].id !== loaded[i].id || stored[i].content !== loaded[i].content) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function applyThreadTranscript(
+  agent: { setMessages: (messages: StoredChatMessage[]) => void },
+  loaded: StoredChatMessage[],
+  threadId: string,
+  ownerThreadIdRef: { current: string },
+): void {
+  agent.setMessages(loaded);
+  ownerThreadIdRef.current = threadId;
 }
 
 export function saveThreadMessages(threadId: string, messages: StoredChatMessage[]): void {
@@ -93,6 +132,9 @@ export function clearThreadMessages(threadId: string): void {
 }
 
 function assistantContentFromAudit(entry: AuditLogEntry): string {
+  if (entry.assistant_reply?.trim()) {
+    return entry.assistant_reply.trim();
+  }
   const parts: string[] = [];
   if (entry.error) {
     parts.push(`**Error:** ${entry.error}`);
@@ -128,12 +170,47 @@ export function messagesFromAuditEntries(entries: AuditLogEntry[]): StoredChatMe
         content: entry.question,
       });
     }
-    messages.push({
-      id: `${entry.run_id}-assistant`,
-      role: "assistant",
-      content: assistantContentFromAudit(entry),
-    });
+    const assistantContent = assistantContentFromAudit(entry);
+    if (!isAuditPlaceholderAssistant(assistantContent)) {
+      messages.push({
+        id: `${entry.run_id}-assistant`,
+        role: "assistant",
+        content: assistantContent,
+      });
+    }
   }
 
   return messages;
+}
+
+/** Audit fallback text when no SQL steps or assistant prose was stored. */
+export function isAuditPlaceholderAssistant(content: string): boolean {
+  const trimmed = content.trim();
+  return trimmed === "Completed." || trimmed === "Run failed.";
+}
+
+/** Prefer the transcript with richer assistant prose (not audit placeholders). */
+export function mergeLocalAndAuditTranscripts(
+  local: StoredChatMessage[],
+  audit: StoredChatMessage[],
+): StoredChatMessage[] {
+  if (local.length === 0) return audit;
+  if (audit.length === 0) return local;
+
+  const assistantQuality = (messages: StoredChatMessage[]) =>
+    messages.reduce((score, message) => {
+      if (message.role !== "assistant") return score;
+      if (isAuditPlaceholderAssistant(message.content)) return score;
+      return score + message.content.length;
+    }, 0);
+
+  const localQuality = assistantQuality(local);
+  const auditQuality = assistantQuality(audit);
+  if (localQuality !== auditQuality) {
+    return localQuality > auditQuality ? local : audit;
+  }
+  if (localQuality === 0) {
+    return local;
+  }
+  return local.length >= audit.length ? local : audit;
 }

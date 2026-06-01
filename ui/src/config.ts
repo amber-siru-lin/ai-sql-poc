@@ -8,6 +8,12 @@ export const COPILOT_RUNTIME_URL =
 
 export const AGENT_ID = "nl2sql_assistant";
 
+export const EDITOR_AGENT_ID = "semantic_editor";
+
+export const EDITOR_AGENT_URL =
+  import.meta.env.VITE_EDITOR_AGENT_URL?.replace(/\/$/, "") ??
+  `${API_URL}/semantic-agent`;
+
 export type SemanticLayerMode = "off" | "wren" | "cortex";
 
 export const DEFAULT_SEMANTIC_LAYER: SemanticLayerMode = "off";
@@ -33,12 +39,22 @@ export type AuditConfig = {
   s3_message?: string;
 };
 
+export type PostgresDockerStatus = {
+  status: "connected" | "disconnected" | "not_configured";
+  message: string;
+  configured: boolean;
+  backend: string;
+  container: string | null;
+  docker_available: boolean;
+};
+
 export type ApiStatusResponse = {
   status: string;
   agent: string;
   dataset: string;
   semantic_layer: SemanticLayerStatus;
   audit?: AuditConfig;
+  postgres?: PostgresDockerStatus;
 };
 
 export type AppView = "chat" | "audit" | "semantic";

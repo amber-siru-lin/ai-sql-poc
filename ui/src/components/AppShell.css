@@ -5,7 +5,7 @@ cpk-web-inspector {
 
 .app-layout {
   --sidebar-width: 260px;
-  --context-width: 300px;
+  --context-width: 380px;
 
   /* Cursor-like dark workspace */
   --copilot-kit-primary-color: #3794ff;
@@ -33,6 +33,49 @@ cpk-web-inspector {
   min-height: 0;
   min-width: 0;
   background: var(--editor-bg);
+}
+
+.app-layout__right-rail {
+  display: flex;
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.app-layout__right-toggle {
+  align-items: center;
+  background: var(--surface);
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 1rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  width: 1.25rem;
+}
+
+.app-layout__right-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.app-layout__right-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: var(--context-width);
+  border-left: 1px solid var(--border);
+}
+
+.app-layout--right-collapsed .app-layout__right-rail {
+  width: auto;
 }
 
 .app-chat-pane {
@@ -92,7 +135,7 @@ cpk-web-inspector {
 
 @media (max-width: 1100px) {
   .app-layout {
-    --context-width: 260px;
+    --context-width: 320px;
     --sidebar-width: 220px;
   }
 }
@@ -106,10 +149,28 @@ cpk-web-inspector {
   }
 
   .left-sidebar,
-  .context-sidebar {
+  .context-sidebar,
+  .app-layout__right-rail {
     border: none;
     border-bottom: 1px solid var(--border);
     max-height: none;
+    width: 100%;
+  }
+
+  .app-layout__right-rail {
+    flex-direction: column;
+  }
+
+  .app-layout__right-toggle {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    height: 1.75rem;
+    width: 100%;
+  }
+
+  .app-layout__right-panel,
+  .semantic-editor-chat,
+  .context-sidebar {
     width: 100%;
   }
 
