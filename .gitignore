@@ -67,3 +67,7 @@ Thumbs.db
 # --- Unrelated local tooling (not part of this POC repo) ---
 .agents/
 .opencode/
+API:
+HA:
+LLM:
+T:
