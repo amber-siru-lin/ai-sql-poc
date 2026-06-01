@@ -1,0 +1,18 @@
+# Secret and profile guardrails for personal_build.
+# Install: pip install pre-commit && pre-commit install
+# Manual scan: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets
+
+  - repo: local
+    hooks:
+      - id: block-sensitive-paths
+        name: Block secrets and profile files
+        entry: scripts/check-sensitive-paths.sh --staged
+        language: system
+        pass_filenames: false
