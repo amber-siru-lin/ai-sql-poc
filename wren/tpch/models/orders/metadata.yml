@@ -1,0 +1,17 @@
+name: orders
+ref_sql: |
+  SELECT
+    O_ORDERKEY AS order_key,
+    O_CUSTKEY AS customer_key,
+    O_TOTALPRICE AS total_price
+  FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS
+primary_key: order_key
+columns:
+  - name: order_key
+    type: integer
+  - name: customer_key
+    type: integer
+  - name: total_price
+    type: double
+    properties:
+      description: Order total in dollars (O_TOTALPRICE)

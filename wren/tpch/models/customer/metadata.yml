@@ -1,0 +1,20 @@
+name: customer
+ref_sql: |
+  SELECT
+    C_CUSTKEY AS customer_key,
+    C_NAME AS customer_name,
+    C_NATIONKEY AS nation_key,
+    C_MKTSEGMENT AS mktsegment
+  FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER
+primary_key: customer_key
+columns:
+  - name: customer_key
+    type: integer
+  - name: customer_name
+    type: varchar
+    properties:
+      description: Customer name (C_NAME)
+  - name: nation_key
+    type: integer
+  - name: mktsegment
+    type: varchar

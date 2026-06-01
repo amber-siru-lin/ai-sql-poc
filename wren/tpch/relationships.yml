@@ -1,0 +1,14 @@
+relationships:
+  - name: orders_to_customer
+    models:
+      - orders
+      - customer
+    join_type: many_to_one
+    condition: orders.customer_key = customer.customer_key
+
+  - name: customer_to_nation
+    models:
+      - customer
+      - nation
+    join_type: many_to_one
+    condition: customer.nation_key = nation.nation_key

@@ -10,3 +10,6 @@ boto3
 # Phase 2: Deep Agents upgrade
 deepagents
 langgraph
+
+# Phase 4: Wren semantic layer (optional — for Wren mode in UI)
+# pip install "wrenai[snowflake,memory]"

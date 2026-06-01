@@ -646,16 +646,25 @@ snowflake-sqlalchemy
 
 ---
 
-### 4.2 WrenAI (Phase 2) — COMPLETE PRE-BUILT SYSTEM
+### 4.2 Wren AI (Phase 4) — OPEN CONTEXT LAYER (`main` only)
 
-**What it actually is:** A full application that you download and run, not a library you import.
+> **Supersedes (2026-06-01):** The sections below describing Docker + port 3000 + Wren web UI refer to **`legacy/v1` GenBI**, archived by Canner in May 2026. **Current POC uses `main` only** — no v1, no Wren product UI. See [Phase 4 plan](../plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) and [Wren vs Cortex Analyst](../architecture/wren-vs-snowflake-cortex-analyst.md). Also evaluate **Snowflake Cortex Analyst** (Semantic Views + REST) as the warehouse-native alternative.
 
-**Think of it as:** Buying a pre-built kitchen vs. building one yourself.
+**What it actually is (2026 `main`):** An OSS semantic **engine** for agents — MDL in git, `wren` CLI / Python SDK / `wren-langchain` tools. You bring the LLM (e.g. Bedrock) and **your** UI (CopilotKit/Amplify).
 
-**Implementation Strategy:**
+**Think of it as:** A governed semantic layer your Deep Agent calls — not a separate chat application.
+
+**Implementation Strategy (current):**
+- `pip install "wrenai[snowflake,memory]"` — no Docker required for POC
+- Model TPCH in `wren/tpch/` MDL; `wren context build`; `wren memory index`
+- Integrate via `wren-langchain` from Phase 2 Deep Agent or compare script
+- **Do not** use `legacy/v1` or `docker run -p 3000:3000 wrenai/wrenai`
+
+**Historical note (v1 — do not use):** The former GenBI app had its own web interface:
+
 - Install Docker Desktop (like installing a virtual machine)
 - Download WrenAI container: `docker run -p 3000:3000 wrenai/wrenai`
-- Open browser to `http://localhost:3000` — WrenAI has its OWN web interface
+- Open browser to `http://localhost:3000` — WrenAI had its OWN web interface
 - Upload your schema definitions (YAML file with table descriptions)
 - WrenAI handles EVERYTHING internally:
   - Semantic layer (built-in)

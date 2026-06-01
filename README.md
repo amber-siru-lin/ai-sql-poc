@@ -69,13 +69,38 @@ scripts/py src/run_baseline_test.py
 scripts/py src/ask_questions.py
 ```
 
+## CopilotKit UI (Phase 3B)
+
+**Terminal 1 — API** (Bedrock + agent):
+
+```bash
+export AWS_PROFILE=Brainfore-Team-Set-654654461736
+aws sso login --profile "$AWS_PROFILE"
+cd ~/Documents/GitHub/personal_build
+scripts/py scripts/sync_wren_profile.py   # once, after snowflake_config changes
+scripts/py -m uvicorn api.main:app --reload --port 8000
+```
+
+**Terminal 2 — UI:**
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**. Header **Semantics**: **Off** (raw Snowflake tools) or **Wren** (MDL + `wren_*` tools). Cortex is disabled until configured.
+
+Details: [ui/README.md](ui/README.md)
+
 ## Phases
 
 | Phase | Status | Doc |
 |-------|--------|-----|
 | **1** Baseline NL→SQL (ChatBedrock) | Working | `docs/plans/2026-05-28-002-feat-simple-ai-nl2sql-poc-plan.md` |
-| **2** Deep Agents + tool calling | Next | `docs/plans/2026-05-29-003-feat-deep-agents-nl2sql-upgrade-plan.md` |
-| **3** Amplify web UI | Planned | Simple plan Days 3–5 |
+| **2** Deep Agents + tool calling | Working | `docs/plans/2026-05-29-003-feat-deep-agents-nl2sql-upgrade-plan.md` |
+| **3b** CopilotKit + semantic toggle | Working | `ui/README.md`, `docs/plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md` |
+| **4** Wren `main` + Cortex Analyst | In progress | `docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md` |
 
 ## Security
 
@@ -85,4 +110,4 @@ scripts/py src/ask_questions.py
 
 ## Docs index
 
-See [docs/README.md](docs/README.md)
+See [docs/README.md](docs/README.md). Harness research: [docs/architecture/nl2sql-harness-comparison.md](docs/architecture/nl2sql-harness-comparison.md).

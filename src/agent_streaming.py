@@ -32,7 +32,7 @@ def _tool_calls_from_message(msg: Any) -> list[dict]:
     return result
 
 
-def stream_agent(agent, messages: list) -> tuple[str, list]:
+def stream_agent(agent, messages: list, config: dict | None = None) -> tuple[str, list]:
     """Run the agent with live step output. Returns (answer text, updated messages)."""
     input_state = {"messages": messages}
     final_answer_parts: list[str] = []
@@ -40,11 +40,13 @@ def stream_agent(agent, messages: list) -> tuple[str, list]:
 
     print("── Agent steps ──")
 
-    stream_kwargs = {
+    stream_kwargs: dict = {
         "stream_mode": ["updates", "messages"],
         "subgraphs": True,
         "version": "v2",
     }
+    if config:
+        stream_kwargs["config"] = config
 
     try:
         chunks = agent.stream(input_state, **stream_kwargs)
@@ -113,7 +115,8 @@ def stream_agent(agent, messages: list) -> tuple[str, list]:
                         print(f"    → tool call: {tc['name']}")
 
     print("\n── Final answer ──\n")
-    result = agent.invoke(input_state)
+    invoke_kwargs = {"config": config} if config else {}
+    result = agent.invoke(input_state, **invoke_kwargs)
     updated_messages = list(result["messages"])
     final = "".join(final_answer_parts).strip() or updated_messages[-1].content
     return final, updated_messages

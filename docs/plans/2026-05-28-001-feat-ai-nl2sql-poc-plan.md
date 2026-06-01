@@ -482,37 +482,20 @@ class NLToSQLAdapter(ABC):
 
 ---
 
-### Phase 2: WrenAI Testing (Days 4-5)
+### Phase 2: WrenAI Testing (Days 4-5) — SUPERSEDED
 
-- [ ] **Unit 9: WrenAI Installation & Setup**
+> **Use [2026-06-01-004 Phase 4 plan](2026-06-01-004-feat-wren-ai-phase-4-plan.md) instead.** Wren `main` (CLI/SDK, no Docker UI) + Snowflake Cortex Analyst comparison. The Docker/`wren-ui` steps below are **`legacy/v1` only** — out of scope.
 
-**Goal:** Run WrenAI locally via Docker
+- [ ] **Unit 9: WrenAI Installation & Setup** *(deprecated — see Phase 4 Unit 1)*
 
-**Requirements:** R3 (compare harnesses)
+**Goal:** ~~Run WrenAI locally via Docker~~ → Install `wrenai` Python package + Snowflake profile
 
-**Dependencies:** Docker installed, Unit 1
+**Approach (historical v1 — do not use):**
+1. ~~Install Docker Desktop~~
+2. ~~Run: `docker run -p 3000:3000 wrenai/wrenai`~~
+3. ~~Open browser to `http://localhost:3000`~~
 
-**Files:**
-- Create: `cta-ai-poc/src/adapters/wrenai_adapter.py`
-
-**Approach:**
-1. Install Docker Desktop (get IT approval first)
-2. Run: `docker run -p 3000:3000 wrenai/wrenai`
-3. Open browser to `http://localhost:3000` — verify WrenAI web UI loads
-4. Upload schema YAML (from Unit 5) to WrenAI's semantic layer
-5. Configure Snowflake connection in WrenAI's web UI
-
-**Execution note:** If Docker not available, SKIP this phase and note in comparison report: "WrenAI requires Docker, not available in this environment."
-
-**Test scenarios:**
-- Happy path: WrenAI container starts without errors
-- Happy path: WrenAI web UI loads at `localhost:3000`
-- Error path: Docker not installed → clear skip message
-- Integration: WrenAI can connect to SQLite database
-
-**Verification:**
-- `docker ps` shows WrenAI container running
-- Browser shows WrenAI interface
+**Current approach:** See Phase 4 plan Units 1–5.
 
 ---
 

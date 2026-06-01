@@ -343,33 +343,16 @@ python test_katherine_questions.py
 
 ---
 
-## Day 2-3: Try WrenAI (If You Want)
+## Day 2-3: Wren / Cortex (optional — see Phase 4 plan)
 
-**Skip this if:** You don't have Docker or it feels too complex.
+> **Updated 2026-06-01:** The old `docker run -p 3000:3000 wrenai/wrenai` GenBI UI is on **`legacy/v1`**, not `main`. We do **not** use v1 or Wren’s product UI.
 
-**Why try it:** See if a pre-built tool is easier than writing code.
+**Phase 4** compares:
 
-### Quick Test (30 minutes)
+1. **Wren `main`** — `pip install "wrenai[snowflake,memory]"`, MDL in git, CLI/SDK behind our UI  
+2. **Snowflake Cortex Analyst** — Semantic View + REST API  
 
-1. **Install Docker Desktop** (if not installed): https://docs.docker.com/desktop/
-
-2. **Run WrenAI:**
-```bash
-docker run -p 3000:3000 wrenai/wrenai
-```
-
-3. **Open browser:** http://localhost:3000
-
-4. **Upload schema:** Copy your `demo_users` table definition
-
-5. **Ask questions** in WrenAI's web interface
-
-6. **Compare:** Is WrenAI easier than your Python script?
-
-**Decide:**
-- ✅ **LangChain easier?** → Use this approach for CTA
-- ✅ **WrenAI easier?** → Consider it for CTA
-- ✅ **Both work?** → WrenAI is less code, LangChain is more control
+See: [docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md](2026-06-01-004-feat-wren-ai-phase-4-plan.md) and [docs/architecture/wren-vs-snowflake-cortex-analyst.md](../architecture/wren-vs-snowflake-cortex-analyst.md).
 
 ---
 

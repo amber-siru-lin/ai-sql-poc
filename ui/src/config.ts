@@ -1,0 +1,35 @@
+export const API_URL =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+
+/** CopilotKit runtime sync only — not used for agent chat (HttpAgent uses API_URL). */
+export const COPILOT_RUNTIME_URL =
+  import.meta.env.VITE_COPILOT_RUNTIME_URL?.replace(/\/$/, "") ??
+  `${API_URL}/copilotkit`;
+
+export const AGENT_ID = "nl2sql_assistant";
+
+export type SemanticLayerMode = "off" | "wren" | "cortex";
+
+export const DEFAULT_SEMANTIC_LAYER: SemanticLayerMode = "off";
+
+export type SemanticLayerStatus = {
+  default: SemanticLayerMode;
+  modes: SemanticLayerMode[];
+  wren_ready: boolean;
+  wren_message: string;
+  cortex_ready: boolean;
+  cortex_message: string;
+};
+
+export type ApiStatusResponse = {
+  status: string;
+  agent: string;
+  dataset: string;
+  semantic_layer: SemanticLayerStatus;
+};
+
+export const SAMPLE_QUESTIONS = [
+  "What is the total amount of all orders?",
+  "Show revenue by customer market segment",
+  "Who are the top 5 customers by order value?",
+] as const;
