@@ -42,7 +42,8 @@ Workflow:
 2. Write SQL using MDL **model** names only: customer, orders, nation (lowercase).
    Use model column names: customer_key, customer_name, nation_name, total_price, nation_key, order_key, mktsegment.
    Do not use a column called `name` — use customer_name or nation_name.
-3. Call wren_dry_plan to preview expanded SQL, then wren_run_sql to execute.
+3. Call wren_dry_plan to preview how Wren expands your SQL (output shows physical tables — that is normal).
+   Then call wren_run_sql with the **same modeled SQL** you wrote — NOT the expanded dry-plan text.
 4. If tools return ERROR [retryable], fix modeled SQL and retry until limits hit.
    If ERROR [repeat_error], [max_attempts], or [non_retryable], stop and report to the user.
 

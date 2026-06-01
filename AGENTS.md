@@ -47,7 +47,7 @@ Read the error message in the ErrorBoundary `<pre>` if the user quoted it. Commo
 | `reading 'length'` on load | `sessions` not passed `App` → `AppShell` → `LeftSidebar` → `ChatHistoryList` | Wire props; default `sessions = []` in list/sidebar |
 | Same after adding chat history | `LeftSidebar` omits `sessions` when rendering `ChatHistoryList` | Pass `sessions`, `loading`, `error`, `onRefresh` |
 | Session panel crash | `useCopilotChatHeadless_c().messages` undefined before CopilotKit mounts | Use `messages?.length ?? 0` |
-| Chat restore crash | `ChatSessionRestore` calls `messages.length` or saves raw CopilotKit messages | Guard with `messages?.length`; use `toStoredMessages()` before save |
+| Chat restore crash | `ChatPane` saves raw CopilotKit messages or reads undefined `messages` | Guard with `messages?.length`; use `toStoredMessages()` before save |
 | Stale UI after fix | Vite HMR missed a prop change | Restart `npm run dev`; hard refresh browser |
 
 Reference: [docs/solutions/chat-memory-and-session-learnings.md](docs/solutions/chat-memory-and-session-learnings.md)

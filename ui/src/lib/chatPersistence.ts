@@ -67,6 +67,7 @@ export function toStoredMessages(messages: unknown): StoredChatMessage[] {
     } else if (msg.content != null) {
       content = JSON.stringify(msg.content);
     }
+    // Keep user messages even if assistant/tool payloads are empty.
     if (!content.trim() && msg.role !== "user") continue;
     if (!content.trim()) content = "(empty message)";
     stored.push({

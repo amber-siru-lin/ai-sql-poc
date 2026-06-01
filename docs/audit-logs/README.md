@@ -11,12 +11,13 @@ Append-only audit trail for every completed **Deep Agent** run (CopilotKit UI vi
 | Item | Detail |
 |------|--------|
 | **S3 bucket** | `cta-poc-ai-sql-audit-dev-654654461736` (`us-east-1`, versioning on, public access blocked) |
-| **Local fallback** | `logs/audit/YYYY-MM-DD.jsonl` (gitignored) — always written |
-| **S3 objects** | `audit/YYYY/MM/DD/{thread_id}/{run_id}.json` — one JSON file per run when `AUDIT_S3_BUCKET` is set |
+| **Storage** | **S3 only** when `AUDIT_S3_BUCKET` is set (default `AUDIT_DESTINATION=s3`) — no local `logs/audit/` |
+| **S3 objects** | `audit/YYYY/MM/DD/{thread_id}/{run_id}.json` — one JSON file per completed run |
 | **Code** | `src/audit_logger.py`, `src/audit_extract.py` |
 | **Hooks** | `SemanticLayerLangGraphAgent.run` (API), `ask_deep_agent.ask` (CLI) |
-| **Config** | Repo-root `.env` or shell: `AUDIT_S3_BUCKET`, optional `AUDIT_S3_PREFIX`, `AUDIT_LOCAL_DIR` |
-| **API** | `api/main.py` loads `.env` on startup; `GET /api/status` returns `audit` block |
+| **Config** | Repo-root `.env`: `AUDIT_S3_BUCKET`, `AUDIT_S3_PREFIX`, optional `AUDIT_DESTINATION=s3` |
+| **API** | Writes and reads S3; `GET /api/status` includes `audit.s3_status` (ok / error) |
+| **UI** | Connection panel shows **Audit log (S3) connected** when the bucket is reachable |
 
 This matches the CTA architecture **auditLogger → S3** path for POC troubleshootability (see [cta-ai-architecture.html](../architecture/cta-ai-architecture.html)).
 
@@ -48,10 +49,10 @@ curl -s http://localhost:8000/api/status | python3 -m json.tool
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `AUDIT_S3_BUCKET` | *(empty)* | If set, upload one JSON object per run to S3 |
+| `AUDIT_S3_BUCKET` | *(empty)* | Required for audit; each run is `PutObject` to this bucket |
 | `AUDIT_S3_PREFIX` | `audit/` | Key prefix inside the bucket |
-| `AUDIT_LOCAL_DIR` | `logs/audit` | Directory under repo root for daily JSONL |
-| `AWS_PROFILE` / `AWS_REGION` | — | Standard AWS creds for S3 `PutObject` |
+| `AUDIT_DESTINATION` | `s3` if bucket set, else `local` | Use `s3` (default), `both`, or `local` (legacy JSONL only) |
+| `AWS_PROFILE` / `AWS_REGION` | — | Standard AWS creds for S3 read/write |
 
 Copy from [.env.example](../../.env.example). Your local `.env` should include:
 
@@ -104,13 +105,9 @@ In the local app, open **Audit logs** in the left sidebar (next to Chat). The pa
 
 ## How to inspect logs
 
-### Local (after any API or CLI run)
+### UI
 
-```bash
-tail -f logs/audit/$(date -u +%Y-%m-%d).jsonl
-# Pretty-print last line:
-tail -1 logs/audit/$(date -u +%Y-%m-%d).jsonl | python3 -m json.tool
-```
+Left sidebar → **Audit logs**, or **Connection** → check **Audit log (S3) connected**.
 
 ### S3
 
@@ -128,8 +125,8 @@ Later (CTA target): query with **Athena** over the `audit/` prefix; add **S3 Obj
 
 | Symptom | Fix |
 |---------|-----|
-| No `logs/audit/` files | Run a question in the UI or CLI; check API logs for `audit logging failed` |
-| Local works, no S3 objects | Set `AUDIT_S3_BUCKET`, restart API, confirm `curl .../api/status` shows bucket; `aws sso login` |
+| No entries in Audit logs UI | Run a chat question; confirm `audit.s3_status` is `ok` on `/api/status`; check API logs |
+| `s3_status: error` | `aws sso login`, IAM `s3:PutObject` + `s3:ListBucket` on the audit bucket/prefix |
 | S3 `AccessDenied` | IAM needs `s3:PutObject` on `arn:aws:s3:::cta-poc-ai-sql-audit-dev-654654461736/audit/*` |
 | Empty `sql_executions` | Agent answered without calling a SQL tool (schema-only or error before execute) |
 

@@ -66,7 +66,7 @@ export function ChatHistoryList({
         </p>
       ) : (
         <ul className="chat-history__list">
-          {safeSessions.map((session) => {
+          {safeSessions.map((session: AuditSession) => {
             const active = session.thread_id === activeThreadId;
             return (
               <li key={session.thread_id}>

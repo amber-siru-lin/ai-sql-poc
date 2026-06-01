@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 
+# Wren dry-plan output — agent must not pass this to wren_run_sql.
+_WREN_EXPANDED = re.compile(r"__source|wren_src_", re.I)
+
 # Modeled SQL should use: customer, orders, nation and columns like customer_name.
 _PHYSICAL_SQL = re.compile(
     r"""
@@ -18,7 +21,15 @@ _PHYSICAL_SQL = re.compile(
 
 
 def wren_modeled_sql_violation(sql: str) -> str | None:
-    """Return a user-facing hint if SQL uses physical TPCH names instead of MDL models."""
+    """Return a user-facing hint if SQL is not valid modeled input for Wren tools."""
+    if _WREN_EXPANDED.search(sql):
+        return (
+            "ERROR [retryable:use_modeled_sql_only]: You passed Wren **expanded** SQL "
+            "(from wren_dry_plan) to wren_run_sql. Dry-plan output is preview-only and "
+            "contains physical table names — that is expected. "
+            "Call wren_run_sql with the same **modeled** SQL you used in wren_dry_plan "
+            "(models: customer, orders, nation — no SNOWFLAKE_SAMPLE_DATA or C_/O_ columns)."
+        )
     if _PHYSICAL_SQL.search(sql):
         return (
             "ERROR [retryable:use_mdl_models]: In Wren mode, do not use "

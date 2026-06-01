@@ -28,18 +28,26 @@ ALL_TOOLS = [
 ]
 
 
-def build_agent_graph(semantic_layer: SemanticLayerMode = DEFAULT_SEMANTIC_LAYER):
+def build_agent_graph(
+    semantic_layer: SemanticLayerMode = DEFAULT_SEMANTIC_LAYER,
+    *,
+    checkpointer=None,
+):
     """Return the compiled LangGraph used by CLI and FastAPI.
 
     ``semantic_layer`` selects the system prompt. Per-request mode for the API
     comes from AG-UI ``forwarded_props`` → ``config.configurable``; tools enforce
     mode at call time.
+
+    Pass ``checkpointer`` for API (Postgres pool) or omit for CLI (MemorySaver).
     """
+    if checkpointer is None:
+        checkpointer = MemorySaver()
     model = ChatBedrock(model_id="us.amazon.nova-pro-v1:0", region_name="us-east-1")
     return create_deep_agent(
         model=model,
         tools=ALL_TOOLS,
         system_prompt=get_system_prompt(semantic_layer),
         middleware=[semantic_layer_system_prompt],
-        checkpointer=MemorySaver(),
+        checkpointer=checkpointer,
     )

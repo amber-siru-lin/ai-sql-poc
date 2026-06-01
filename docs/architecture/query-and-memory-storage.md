@@ -8,6 +8,8 @@ Storage is split by layer. **Query audit** (question, SQL, timing, result finger
 |-------|----------|------------------------|
 | **LangGraph checkpointer** | `MemorySaver()` in `src/agent_factory.py` — state keyed by `thread_id` in the uvicorn process | **No** |
 | **UI thread id** | `localStorage` key `ai-sql-poc-thread-id` + CopilotKit / AG-UI `threadId` on each run | Survives browser refresh; server state still lost on restart |
+| **UI chat snapshots** | `localStorage` key `ai-sql-poc-chat-snapshots` (up to 80 msgs/thread) — see [chat-memory-and-sessions.md](chat-memory-and-sessions.md) | Survives refresh and session switches in **this browser** |
+| **Chat history (sidebar)** | `GET /api/audit/sessions` — threads grouped from audit log | Survives API restart; restore quality depends on snapshot vs audit fallback |
 | **Clear conversation** | UI assigns a new `thread_id` and resets chat messages | Old server checkpoint remains in RAM until process exit |
 
 AG-UI passes `thread_id` from the browser agent into `SemanticLayerLangGraphAgent` (`src/ag_ui_agent.py`) → `config.configurable.thread_id` for retry policy and checkpointing.
@@ -50,16 +52,19 @@ Full guide: **[docs/audit-logs/README.md](../audit-logs/README.md)** (bucket set
 
 | Layer | Location | Notes |
 |-------|----------|--------|
-| **Local dev** | `logs/audit/YYYY-MM-DD.jsonl` (gitignored) | One JSON object per line per run |
-| **S3 (optional)** | `s3://cta-poc-ai-sql-audit-dev-654654461736/audit/YYYY/MM/DD/{thread_id}/{run_id}.json` | Set `AUDIT_S3_BUCKET` in `.env` or shell; requires `AWS_PROFILE` with `s3:PutObject` |
+| **S3 (primary)** | `s3://cta-poc-ai-sql-audit-dev-654654461736/audit/YYYY/MM/DD/{thread_id}/{run_id}.json` | Default `AUDIT_DESTINATION=s3` — one JSON object per run; UI/API read from S3 |
+| **Local JSONL** | `logs/audit/` (legacy) | Only if `AUDIT_DESTINATION=local` or `both` |
 | **Code** | `src/audit_logger.py`, `src/audit_extract.py` | Hooked from `SemanticLayerLangGraphAgent.run` (API) and `ask_deep_agent.ask` (CLI) |
 
 `GET /api/status` includes an `audit` object with resolved bucket/prefix paths.
 
 ## Not implemented yet
 
-- Thread list / search in the left sidebar
 - Durable checkpointer (Postgres, SQLite, etc.)
+- Server-side session/message store (user-scoped, cross-device)
+- Full transcript replay (tool cards, streaming chunks) from audit alone
+
+**Chat history UI:** implemented — see [chat-memory-and-sessions.md](chat-memory-and-sessions.md).
 
 ---
 

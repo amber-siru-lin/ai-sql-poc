@@ -1,42 +1,109 @@
-"""Read local audit JSONL files for the API / UI."""
+"""Read audit records from S3 (or legacy local JSONL)."""
 
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
-from src.audit_logger import _repo_root, audit_config
+from src.audit_logger import _resolve_destination, _s3_client, audit_config
 
 
-def _audit_dir() -> Path:
-    return _repo_root() / audit_config()["local_dir"]
+def _parse_record(raw: str, *, source_key: str) -> dict[str, Any] | None:
+    try:
+        record = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if isinstance(record, dict):
+        record["_meta"] = {"s3_key": source_key}
+    return record
+
+
+def _date_to_prefix(date: str, prefix: str) -> str:
+    parts = date.split("-")
+    if len(parts) != 3:
+        return prefix
+    return f"{prefix}{parts[0]}/{parts[1]}/{parts[2]}/"
+
+
+def _list_s3_keys(*, date: str | None = None, max_keys: int = 500) -> list[str]:
+    cfg = audit_config()
+    bucket = cfg["s3_bucket"]
+    if not bucket:
+        return []
+
+    prefix = cfg["s3_prefix"]
+    if date:
+        prefix = _date_to_prefix(date, prefix)
+
+    client = _s3_client()
+    keys: list[str] = []
+    token: str | None = None
+    while len(keys) < max_keys:
+        kwargs: dict[str, Any] = {
+            "Bucket": bucket,
+            "Prefix": prefix,
+            "MaxKeys": min(1000, max_keys - len(keys)),
+        }
+        if token:
+            kwargs["ContinuationToken"] = token
+        resp = client.list_objects_v2(**kwargs)
+        for obj in resp.get("Contents") or []:
+            key = obj.get("Key") or ""
+            if key.endswith(".json"):
+                keys.append(key)
+        if not resp.get("IsTruncated"):
+            break
+        token = resp.get("NextContinuationToken")
+        if not token:
+            break
+
+    keys.sort(reverse=True)
+    return keys[:max_keys]
+
+
+def _fetch_s3_records(keys: list[str]) -> list[dict[str, Any]]:
+    cfg = audit_config()
+    bucket = cfg["s3_bucket"]
+    if not bucket or not keys:
+        return []
+
+    client = _s3_client()
+    records: list[dict[str, Any]] = []
+    for key in keys:
+        try:
+            resp = client.get_object(Bucket=bucket, Key=key)
+            body = resp["Body"].read().decode("utf-8")
+            record = _parse_record(body, source_key=key)
+            if record:
+                records.append(record)
+        except Exception:
+            continue
+    return records
 
 
 def list_audit_dates() -> list[str]:
     """Available log dates (YYYY-MM-DD), newest first."""
-    root = _audit_dir()
+    if _resolve_destination() not in ("s3", "both"):
+        return _list_local_dates()
+    keys = _list_s3_keys(max_keys=2000)
+    dates: set[str] = set()
+    prefix = audit_config()["s3_prefix"]
+    for key in keys:
+        # audit/2026/06/01/thread/run.json
+        rest = key[len(prefix) :] if key.startswith(prefix) else key
+        parts = rest.split("/")
+        if len(parts) >= 3 and len(parts[0]) == 4:
+            dates.add(f"{parts[0]}-{parts[1]}-{parts[2]}")
+    return sorted(dates, reverse=True)
+
+
+def _list_local_dates() -> list[str]:
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "logs/audit"
     if not root.is_dir():
         return []
-    dates = sorted(
-        (p.stem for p in root.glob("*.jsonl") if p.is_file()),
-        reverse=True,
-    )
-    return dates
-
-
-def _parse_line(line: str, *, source_file: str, line_no: int) -> dict[str, Any] | None:
-    line = line.strip()
-    if not line:
-        return None
-    try:
-        record = json.loads(line)
-    except json.JSONDecodeError:
-        return None
-    if isinstance(record, dict):
-        record["_meta"] = {"file": source_file, "line": line_no}
-    return record
+    return sorted((p.stem for p in root.glob("*.jsonl") if p.is_file()), reverse=True)
 
 
 def read_audit_entries(
@@ -46,15 +113,36 @@ def read_audit_entries(
     thread_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return audit records newest-first."""
-    root = _audit_dir()
+    limit = max(1, min(limit, 200))
+    if _resolve_destination() in ("s3", "both") and audit_config()["s3_bucket"]:
+        scan = max(limit, min(500, limit * 10))
+        keys = _list_s3_keys(date=date, max_keys=scan)
+        entries = _fetch_s3_records(keys)
+    else:
+        entries = _read_local_entries(date=date)
+
+    if thread_id:
+        entries = [e for e in entries if e.get("thread_id") == thread_id]
+        if _resolve_destination() in ("s3", "both") and audit_config()["s3_bucket"]:
+            # First pass may miss runs when many threads share a day — scan deeper.
+            if len(entries) < limit:
+                keys = _list_s3_keys(date=date, max_keys=min(2000, scan * 4))
+                entries = [
+                    e for e in _fetch_s3_records(keys) if e.get("thread_id") == thread_id
+                ]
+
+    entries.sort(key=lambda r: r.get("timestamp") or "", reverse=True)
+    return entries[:limit]
+
+
+def _read_local_entries(*, date: str | None) -> list[dict[str, Any]]:
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "logs/audit"
     if not root.is_dir():
         return []
-
-    limit = max(1, min(limit, 200))
-    files: list[Path]
     if date:
-        path = root / f"{date}.jsonl"
-        files = [path] if path.is_file() else []
+        files = [root / f"{date}.jsonl"] if (root / f"{date}.jsonl").is_file() else []
     else:
         files = sorted(root.glob("*.jsonl"), key=lambda p: p.stem, reverse=True)
 
@@ -65,15 +153,17 @@ def read_audit_entries(
         except OSError:
             continue
         for i, line in enumerate(lines, start=1):
-            record = _parse_line(line, source_file=path.name, line_no=i)
-            if record is None:
+            line = line.strip()
+            if not line:
                 continue
-            if thread_id and record.get("thread_id") != thread_id:
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
                 continue
-            entries.append(record)
-
-    entries.sort(key=lambda r: r.get("timestamp") or "", reverse=True)
-    return entries[:limit]
+            if isinstance(record, dict):
+                record["_meta"] = {"file": path.name, "line": i}
+                entries.append(record)
+    return entries
 
 
 def list_audit_sessions(*, limit: int = 30, scan_limit: int = 500) -> list[dict[str, Any]]:
@@ -86,16 +176,16 @@ def list_audit_sessions(*, limit: int = 30, scan_limit: int = 500) -> list[dict[
     for entry in entries:
         if entry.get("source") != "api":
             continue
-        thread_id = entry.get("thread_id")
-        if not thread_id or thread_id == "cli":
+        tid = entry.get("thread_id")
+        if not tid or tid == "cli":
             continue
 
         ts = entry.get("timestamp") or ""
         question = (entry.get("question") or "").strip()
-        session = sessions.get(thread_id)
+        session = sessions.get(tid)
         if session is None:
-            sessions[thread_id] = {
-                "thread_id": thread_id,
+            sessions[tid] = {
+                "thread_id": tid,
                 "title": question or "(untitled session)",
                 "first_timestamp": ts,
                 "last_timestamp": ts,

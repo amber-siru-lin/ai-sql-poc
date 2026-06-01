@@ -21,8 +21,8 @@ const MEMORY_COMMON: { title: string; detail: string }[] = [
       "Up to 80 messages per thread in localStorage (`ai-sql-poc-chat-snapshots`) so the UI can restore text after refresh. Not a full server-side transcript store.",
   },
   {
-    title: "Query audit log",
-    detail: `Every completed run appends JSON to logs/audit/ and, when configured, S3 (${AUDIT_BUCKET}/audit/). Open Audit logs in the sidebar or use the button below.`,
+    title: "Query audit log (S3)",
+    detail: `Each completed run writes one JSON file to S3 (${AUDIT_BUCKET}/audit/). Check Connection → Audit log (S3) for sync status. Open Audit logs in the sidebar or use the button below.`,
   },
   {
     title: "Chat history (sidebar)",
@@ -122,9 +122,8 @@ export function SessionPanel({
       ) : null}
 
       <p className="session-panel__footnote">
-        Past sessions appear in the left sidebar. Full chat text is cached in this browser;
-        each run is also logged to <code>logs/audit/</code> and optional S3. Server follow-up
-        context still lives in API memory until restart.
+        Past sessions appear in the left sidebar (from S3 audit). Chat text is cached in this
+        browser only. Server follow-up context still lives in API memory until restart.
       </p>
     </section>
   );
