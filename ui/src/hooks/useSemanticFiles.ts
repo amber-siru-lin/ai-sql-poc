@@ -105,6 +105,11 @@ export function useSemanticFiles() {
     }
   }, [selectedPath, content, loadTree]);
 
+  const discardChanges = useCallback(async () => {
+    if (!selectedPath || !isDirty) return;
+    await loadFile(selectedPath);
+  }, [selectedPath, isDirty, loadFile]);
+
   const validate = useCallback(async () => {
     setValidating(true);
     setValidateResult(null);
@@ -152,6 +157,7 @@ export function useSemanticFiles() {
     saveStatus,
     selectPath,
     saveFile,
+    discardChanges,
     validating,
     validateResult,
     validate,
