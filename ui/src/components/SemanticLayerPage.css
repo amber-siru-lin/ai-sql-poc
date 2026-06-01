@@ -5,6 +5,7 @@
   min-height: 0;
   overflow: hidden;
   padding: 1rem 1.25rem;
+  min-width: 0;
 }
 
 .semantic-page__header {
@@ -53,9 +54,39 @@
 }
 
 .semantic-page__scroll {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   overflow: auto;
+}
+
+.semantic-page__consumers-fold {
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+}
+
+.semantic-page__consumers-summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  user-select: none;
+}
+
+.semantic-card__path-link {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.semantic-card__path-link:hover code {
+  color: #3794ff;
+  text-decoration: underline;
 }
 
 .semantic-page__grid {

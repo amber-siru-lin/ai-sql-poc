@@ -1,6 +1,7 @@
 import type { SemanticLayerMode } from "../config";
 import { useSemanticConsumers } from "../hooks/useSemanticConsumers";
 import type { SemanticConsumer } from "../types/semanticEditor";
+import { SemanticFileEditor } from "./SemanticFileEditor";
 import "./SemanticLayerPage.css";
 
 function modeLabel(mode: SemanticConsumer["mode"]): string {
@@ -21,10 +22,8 @@ export function SemanticLayerPage({ activeSemanticMode }: Props) {
         <div>
           <h1 className="semantic-page__title">Semantic layer</h1>
           <p className="semantic-page__subtitle">
-            Who reads which files in this repo. File editing and PR workflow are
-            planned in{" "}
-            <code>docs/plans/2026-06-01-006-feat-semantic-layer-editor-plan.md</code>.
-            Sidebar Semantics is currently <strong>{activeSemanticMode}</strong>.
+            Consumers and editable MDL/schema files. Sidebar Semantics is{" "}
+            <strong>{activeSemanticMode}</strong>.
           </p>
         </div>
         <button type="button" className="semantic-page__btn" onClick={() => void refresh()}>
@@ -41,18 +40,29 @@ export function SemanticLayerPage({ activeSemanticMode }: Props) {
 
       {data ? (
         <div className="semantic-page__scroll">
-          <div className="semantic-page__grid">
-            {data.consumers.map((consumer) => (
-              <ConsumerCard
-                key={consumer.id}
-                consumer={consumer}
-                highlighted={consumer.mode === activeSemanticMode}
-              />
-            ))}
+          <details className="semantic-page__consumers-fold">
+            <summary className="semantic-page__consumers-summary">Consumers</summary>
+            <div className="semantic-page__grid">
+              {data.consumers.map((consumer) => (
+                <ConsumerCard
+                  key={consumer.id}
+                  consumer={consumer}
+                  highlighted={consumer.mode === activeSemanticMode}
+                  onOpenFile={(path) => {
+                    const el = document.getElementById("semantic-file-editor");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                    window.dispatchEvent(
+                      new CustomEvent("semantic-editor-open", { detail: { path } }),
+                    );
+                  }}
+                />
+              ))}
+            </div>
+          </details>
+
+          <div id="semantic-file-editor">
+            <SemanticFileEditor />
           </div>
-          <p className="semantic-page__footer">
-            Repo root: <code>{data.repo_root}</code>
-          </p>
         </div>
       ) : null}
     </div>
@@ -62,9 +72,11 @@ export function SemanticLayerPage({ activeSemanticMode }: Props) {
 function ConsumerCard({
   consumer,
   highlighted,
+  onOpenFile,
 }: {
   consumer: SemanticConsumer;
   highlighted: boolean;
+  onOpenFile: (path: string) => void;
 }) {
   const badgeClass = consumer.ready
     ? "semantic-card__badge semantic-card__badge--ok"
@@ -102,7 +114,17 @@ function ConsumerCard({
             <span className="semantic-card__path-dot" aria-hidden>
               {p.exists ? "●" : "○"}
             </span>
-            <code>{p.path}</code>
+            {p.exists ? (
+              <button
+                type="button"
+                className="semantic-card__path-link"
+                onClick={() => onOpenFile(p.path)}
+              >
+                <code>{p.path}</code>
+              </button>
+            ) : (
+              <code>{p.path}</code>
+            )}
           </li>
         ))}
       </ul>
