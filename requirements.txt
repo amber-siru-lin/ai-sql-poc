@@ -11,5 +11,11 @@ boto3
 deepagents
 langgraph
 
+# Phase 3: CopilotKit local API (ui/ + api/)
+fastapi>=0.136
+uvicorn[standard]>=0.48
+copilotkit>=0.1.93
+ag-ui-langgraph>=0.0.37
+
 # Phase 4: Wren semantic layer (optional — for Wren mode in UI)
-# pip install "wrenai[snowflake,memory]"
+# pip install "wrenai[snowflake,memory]" pyyaml

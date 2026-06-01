@@ -45,10 +45,17 @@ build/
 # --- UI local ---
 ui/.vite/
 
-# --- Node (future Amplify phase) ---
+# --- Node (Phase 3) ---
 node_modules/
+ui/node_modules/
+ui/dist/
+web/node_modules/
+web/dist/
+web/.amplify/
+dist/
 .amplify/
 amplify_outputs.json
+web/amplify_outputs.json
 
 # --- OS & editors ---
 .DS_Store

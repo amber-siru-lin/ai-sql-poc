@@ -12,6 +12,7 @@ From repo root (so `src/` and `config/` imports resolve):
 export AWS_PROFILE=Brainfore-Team-Set-654654461736
 aws sso login --profile $AWS_PROFILE
 
+scripts/py scripts/sync_wren_profile.py   # optional, for Wren mode
 scripts/py -m uvicorn api.main:app --reload --port 8000
 ```
 

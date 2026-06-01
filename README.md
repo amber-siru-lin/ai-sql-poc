@@ -1,113 +1,138 @@
 # AI SQL POC
 
-Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**, with a planned upgrade to **LangChain Deep Agents**.
+Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**.
+
+| Phase | What | Status |
+|-------|------|--------|
+| **1** | ChatBedrock single-shot NL→SQL | Done |
+| **2** | LangChain Deep Agents + tools + chat memory | Done |
+| **3** | Web UI (CopilotKit local) | Working locally — [learnings](docs/solutions/copilotkit-local-ui-learnings.md) |
+
+**Phase-by-phase file guide:** [docs/PHASES.md](docs/PHASES.md)
+
+---
 
 ## Repository layout
 
 ```
 .
-├── config/                 # Local secrets (snowflake_config.py is gitignored)
-├── docs/
-│   ├── architecture/       # Interactive architecture diagram (HTML)
-│   ├── brainstorms/      # Requirements & meeting prep
-│   └── plans/              # Implementation plans (Phase 1, 2, CTA POC)
-├── schema/                 # Table/column definitions for the AI
-├── scripts/                # AWS setup & Bedrock diagnostics
-├── sql/                    # Optional Snowflake setup scripts
-├── src/                    # Python POC code
-│   ├── nl2sql.py           # Core Bedrock + Snowflake logic
+├── src/                    # Python POC (Phase 1 + 2 + shared agent)
+│   ├── agent_factory.py    # Deep Agent graph (CLI + API)
+│   ├── nl2sql.py           # Phase 1 core: ChatBedrock + Snowflake
 │   ├── run_baseline_test.py
-│   └── ask_questions.py
-├── .env.example
-├── .gitignore
-└── requirements.txt
+│   ├── ask_questions.py    # Phase 1 interactive
+│   ├── ask_deep_agent.py   # Phase 2 interactive
+│   ├── agent_streaming.py  # Phase 2 --verbose steps
+│   ├── semantic_layer/     # Off/Wren/Cortex prompts + retry policy
+│   └── tools/              # Snowflake, Wren, Cortex tools
+├── wren/tpch/              # Wren MDL (TPCH_SF1)
+├── ui/                     # Phase 3B — CopilotKit + Vite React
+├── api/                    # Phase 3B — FastAPI AG-UI server
+├── config/                 # Local secrets (snowflake_config.py gitignored)
+├── schema/                 # tpch_sf1.md — shared by all phases
+├── scripts/                # py, setup_aws.sh, diagnose_bedrock.py
+├── sql/                    # Optional Snowflake setup
+├── docs/                   # Plans + PHASES.md
+└── web/                    # Phase 3A (parked) — Amplify Gen 2 scaffold
 ```
 
-## Quick start (Phase 1)
+---
 
-### 1. Install dependencies
+## Setup (all phases)
 
 ```bash
-cd ~/Documents/GitHub/personal_build
+cd ~/Documents/GitHub/personal_build   # or your clone of ai-sql-poc
+
 scripts/py -m pip install -r requirements.txt
-```
 
-**Important:** On this Mac, plain `python` points at Homebrew (no packages). Always use:
-
-```bash
-scripts/py scripts/diagnose_bedrock.py
-scripts/py src/run_baseline_test.py
-scripts/py src/ask_questions.py
-```
-
-Or the full path: `/opt/anaconda3/bin/python`
-
-### 2. Configure Snowflake (local only — never committed)
-
-```bash
 cp config/snowflake_config.example.py config/snowflake_config.py
-# Edit config/snowflake_config.py with your credentials
-```
+# edit config/snowflake_config.py
 
-### 3. Configure AWS
-
-```bash
-aws sso login
-# or: bash scripts/setup_aws.sh
-python scripts/diagnose_bedrock.py
-```
-
-### 4. Run the POC
-
-```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736   # your SSO profile
-
-# One-shot test
-scripts/py src/run_baseline_test.py
-
-# Interactive questions
-scripts/py src/ask_questions.py
-```
-
-## CopilotKit UI (Phase 3B)
-
-**Terminal 1 — API** (Bedrock + agent):
-
-```bash
 export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws sso login --profile "$AWS_PROFILE"
-cd ~/Documents/GitHub/personal_build
-scripts/py scripts/sync_wren_profile.py   # once, after snowflake_config changes
-scripts/py -m uvicorn api.main:app --reload --port 8000
+aws sso login --profile $AWS_PROFILE
+scripts/py scripts/diagnose_bedrock.py
 ```
 
-**Terminal 2 — UI:**
+Use `scripts/py` instead of plain `python` on Mac (Homebrew vs Anaconda).
+
+---
+
+## Run Phase 1 only (ChatBedrock)
+
+**Files:** `src/nl2sql.py` · `src/run_baseline_test.py` · `src/ask_questions.py`
 
 ```bash
-cd ui
-npm install
-npm run dev
+scripts/py src/run_baseline_test.py   # one-shot test
+scripts/py src/ask_questions.py       # ask your own questions
 ```
 
-Open **http://localhost:5173**. Header **Semantics**: **Off** (raw Snowflake tools) or **Wren** (MDL + `wren_*` tools). Cortex is disabled until configured.
+No Deep Agent files involved.
 
-Details: [ui/README.md](ui/README.md)
+---
 
-## Phases
+## Run Phase 2 only (Deep Agents)
+
+**Files:** Phase 1 core + `src/ask_deep_agent.py` · `src/tools/` · `src/agent_streaming.py`
+
+```bash
+scripts/py src/ask_deep_agent.py              # interactive + follow-up memory
+scripts/py src/ask_deep_agent.py --verbose    # show planning / tool steps
+scripts/py src/ask_deep_agent.py --semantic-layer wren   # Wren MDL tools
+```
+
+Type `clear` in the REPL to reset conversation memory.
+
+---
+
+## Phase 3 — Web UI (CopilotKit, local)
+
+**Files:** `ui/` · `api/` · `wren/tpch/` · `src/agent_factory.py` (shared with Phase 2 CLI)
+
+**Active path:** CopilotKit + Vite in `ui/`, FastAPI agent server in `api/`. Header **Semantics**: **Off** | **Wren** | **Cortex** (placeholder).
+
+**Parked path:** `web/` Amplify Gen 2 — blocked on CDK bootstrap ([learnings](docs/solutions/aws-amplify-cdk-bootstrap-blocked.md)).
+
+### Install (first time)
+
+```bash
+scripts/py -m pip install -r requirements.txt
+# Optional Wren mode: scripts/py -m pip install "wrenai[snowflake,memory]" pyyaml
+cd ui && npm install && cd ..
+```
+
+### Run — two terminals
+
+```bash
+# Terminal 1 — API
+export AWS_PROFILE=Brainfore-Team-Set-654654461736
+aws sso login --profile $AWS_PROFILE
+scripts/py scripts/sync_wren_profile.py   # once, for Wren mode
+cd wren/tpch && wren context build && wren memory index   # once, for Wren mode
+scripts/py -m uvicorn api.main:app --reload --port 8000
+
+# Terminal 2 — UI
+cd ui && npm run dev
+```
+
+Open **http://localhost:5173** — chat in the **SQL Assistant** panel on the right.
+
+Details: [ui/README.md](ui/README.md) · [wren/tpch/README.md](wren/tpch/README.md) · [docs/PHASES.md](docs/PHASES.md#phase-3b--copilotkit-active-local)
 
 | Phase | Status | Doc |
 |-------|--------|-----|
-| **1** Baseline NL→SQL (ChatBedrock) | Working | `docs/plans/2026-05-28-002-feat-simple-ai-nl2sql-poc-plan.md` |
-| **2** Deep Agents + tool calling | Working | `docs/plans/2026-05-29-003-feat-deep-agents-nl2sql-upgrade-plan.md` |
-| **3b** CopilotKit + semantic toggle | Working | `ui/README.md`, `docs/plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md` |
-| **4** Wren `main` + Cortex Analyst | In progress | `docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md` |
+| **4** Wren + Cortex harness | In progress | [Phase 4 plan](docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) · [semantic toggle](docs/plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md) |
+| **Agent errors** | Enforced in code | [agent-error-handling.md](docs/architecture/agent-error-handling.md) |
+
+---
 
 ## Security
 
 - `config/snowflake_config.py` and `.env` are **gitignored**
 - Never commit passwords or AWS keys
-- See `config/README.md`
+- See [config/README.md](config/README.md)
 
-## Docs index
+## Docs
 
-See [docs/README.md](docs/README.md). Harness research: [docs/architecture/nl2sql-harness-comparison.md](docs/architecture/nl2sql-harness-comparison.md).
+- [docs/PHASES.md](docs/PHASES.md) — isolate Phase 1 / 2 / 3
+- [docs/README.md](docs/README.md) — plans and requirements index
+- [NL→SQL harness comparison](docs/architecture/nl2sql-harness-comparison.md)

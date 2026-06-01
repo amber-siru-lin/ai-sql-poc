@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTA AI Architecture -- High-Level Overview</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 0.25rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* ===== MAIN LAYOUT: 2-COLUMN ===== */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== LEFT: LAYERS ===== */
+        .layers-column {
+            min-width: 0;
+        }
+
+        /* ===== LAYER CARD ===== */
+        .layer-card {
+            background: white;
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .layer-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .layer-card.active {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .layer-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid;
+        }
+        .layer-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .layer-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .layer-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        .layer-body.single {
+            grid-template-columns: 1fr;
+        }
+
+        .component-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .component-box:hover {
+            background: #e7f5ff;
+            border-color: #a5d8ff;
+        }
+        .component-box h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .component-box .meta {
+            font-size: 0.8rem;
+            color: #868e96;
+            margin-bottom: 0.5rem;
+        }
+        .component-box ul {
+            list-style: none;
+            font-size: 0.8rem;
+            color: #495057;
+        }
+        .component-box ul li {
+            padding: 0.15rem 0;
+            padding-left: 1rem;
+            position: relative;
+        }
+        .component-box ul li::before {
+            content: "\2022";
+            position: absolute;
+            left: 0.25rem;
+            color: #adb5bd;
+        }
+
+        .lambda-list {
+            margin-top: 0.5rem;
+            list-style: none;
+            font-size: 0.8rem;
+        }
+        .lambda-list li {
+            padding: 0.15rem 0;
+            color: #495057;
+        }
+        .lambda-list li::before {
+            content: "\21AA";
+            margin-right: 0.35rem;
+            color: #1864ab;
+        }
+
+        /* ===== COLORS PER LAYER ===== */
+        .layer-card[data-layer="1"] { border-color: #4a9eed; }
+        .layer-card[data-layer="1"] .layer-header { border-color: #4a9eed; }
+        .layer-card[data-layer="1"] .layer-number { background: #4a9eed; }
+        .layer-card[data-layer="1"] .layer-title { color: #4a9eed; }
+
+        .layer-card[data-layer="2"] { border-color: #1864ab; }
+        .layer-card[data-layer="2"] .layer-header { border-color: #1864ab; }
+        .layer-card[data-layer="2"] .layer-number { background: #1864ab; }
+        .layer-card[data-layer="2"] .layer-title { color: #1864ab; }
+
+        .layer-card[data-layer="3"] { border-color: #5f3dc4; }
+        .layer-card[data-layer="3"] .layer-header { border-color: #5f3dc4; }
+        .layer-card[data-layer="3"] .layer-number { background: #5f3dc4; }
+        .layer-card[data-layer="3"] .layer-title { color: #5f3dc4; }
+
+        .layer-card[data-layer="4"] { border-color: #be4bdb; }
+        .layer-card[data-layer="4"] .layer-header { border-color: #be4bdb; }
+        .layer-card[data-layer="4"] .layer-number { background: #be4bdb; }
+        .layer-card[data-layer="4"] .layer-title { color: #be4bdb; }
+
+        .layer-card[data-layer="5"] { border-color: #2b8a3e; }
+        .layer-card[data-layer="5"] .layer-header { border-color: #2b8a3e; }
+        .layer-card[data-layer="5"] .layer-number { background: #2b8a3e; }
+        .layer-card[data-layer="5"] .layer-title { color: #2b8a3e; }
+
+        .layer-card[data-layer="6"] { border-color: #16a34a; }
+        .layer-card[data-layer="6"] .layer-header { border-color: #16a34a; }
+        .layer-card[data-layer="6"] .layer-number { background: #16a34a; }
+        .layer-card[data-layer="6"] .layer-title { color: #16a34a; }
+
+        .layer-card[data-layer="7"] { border-color: #e8590c; }
+        .layer-card[data-layer="7"] .layer-header { border-color: #e8590c; }
+        .layer-card[data-layer="7"] .layer-number { background: #e8590c; }
+        .layer-card[data-layer="7"] .layer-title { color: #e8590c; }
+
+        .layer-card[data-layer="8"] { border-color: #f59f00; }
+        .layer-card[data-layer="8"] .layer-header { border-color: #f59f00; }
+        .layer-card[data-layer="8"] .layer-number { background: #f59f00; }
+        .layer-card[data-layer="8"] .layer-title { color: #f59f00; }
+
+        /* ===== ARROWS ===== */
+        .arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0.25rem 0;
+        }
+        .arrow-line {
+            width: 2px;
+            height: 20px;
+            background: #adb5bd;
+        }
+        .arrow-head {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #adb5bd;
+        }
+        .arrow-label {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #495057;
+            margin: 0.35rem 0;
+        }
+
+        /* ===== RIGHT: DETAIL PANEL (STICKY) ===== */
+        .detail-column {
+            position: sticky;
+            top: 1rem;
+            height: fit-content;
+        }
+
+        .detail-panel {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            min-height: 200px;
+        }
+        .detail-panel.empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            text-align: center;
+        }
+        .detail-panel.empty .hint {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            max-width: 250px;
+        }
+
+        .detail-panel h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: #1864ab;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e7f5ff;
+        }
+
+        .detail-section {
+            margin-bottom: 1rem;
+        }
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+        .detail-section h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #495057;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+        .detail-section p, .detail-section li {
+            font-size: 0.88rem;
+            color: #495057;
+            line-height: 1.5;
+        }
+        .detail-section ul {
+            margin-left: 1.1rem;
+        }
+        .detail-section li {
+            margin-bottom: 0.3rem;
+        }
+        .tag {
+            display: inline-block;
+            background: #e7f5ff;
+            color: #1864ab;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            margin-right: 0.35rem;
+            margin-bottom: 0.35rem;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .badge.new { background: #d3f9d8; color: #2b8a3e; }
+        .badge.existing { background: #e7f5ff; color: #1864ab; }
+
+        /* ===== EXAMPLE SECTION ===== */
+        .example-section {
+            margin-top: 2.5rem;
+            grid-column: 1 / -1;
+        }
+        .example-section h2 {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: #1a1a1a;
+        }
+        .example-step {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #adb5bd;
+        }
+        .example-step strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+        .example-step span {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .example-arrow {
+            text-align: center;
+            color: #adb5bd;
+            margin: 0.25rem 0;
+            font-size: 1.25rem;
+        }
+        .step-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .detail-column {
+                position: static;
+                margin-top: 1rem;
+            }
+            .layer-body {
+                grid-template-columns: 1fr;
+            }
+            .lambda-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>CTA AI Data Analysis App</h1>
+    <p class="subtitle">8-Layer Serverless Architecture -- AWS + Snowflake + Bedrock<br>Click any component to see what we chose, why, and alternatives rejected.</p>
+
+    <div class="main-layout">
+        <!-- LEFT: LAYERS -->
+        <div class="layers-column">
+
+            <!-- LAYER 1: CLIENT -->
+            <div class="layer-card" data-layer="1" data-id="layer1">
+                <div class="layer-header">
+                    <div class="layer-number">1</div>
+                    <div class="layer-title">Client</div>
+                </div>
+                <div class="layer-body single">
+                    <div class="component-box" data-id="browser">
+                        <h4>CTA Staff</h4>
+                        <div class="meta">End Users</div>
+                        <ul>
+                            <li>Browser / Mobile / Desktop</li>
+                            <li>Chrome, Safari, Edge</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">HTTPS</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- LAYER 2: PRESENTATION -->
+            <div class="layer-card" data-layer="2" data-id="layer2">
+                <div class="layer-header">
+                    <div class="layer-number">2</div>
+                    <div class="layer-title">Presentation Tier -- AWS Amplify Gen 2 (Fully Managed)</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="cognito">
+                        <h4>Amazon Cognito</h4>
+                        <div class="meta">+ Okta IdP Federation</div>
+                        <ul>
+                            <li>JWT + Groups</li>
+                            <li>Role-based access</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="amplify">
+                        <h4>AWS Amplify Gen 2</h4>
+                        <div class="meta">Hosting + Build/CD</div>
+                        <ul>
+                            <li>CloudFront CDN</li>
+                            <li>Auto deployments</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="react">
+                        <h4>React 18 SPA</h4>
+                        <div class="meta">+ Recharts + MUI</div>
+                        <ul>
+                            <li>Chat interface</li>
+                            <li>Data visualizations</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">GraphQL</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- LAYER 3: APPLICATION -->
+            <div class="layer-card" data-layer="3" data-id="layer3">
+                <div class="layer-header">
+                    <div class="layer-number">3</div>
+                    <div class="layer-title">Application Tier -- Serverless (AWS Lambda + AppSync)</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="appsync">
+                        <h4>AWS AppSync</h4>
+                        <div class="meta">GraphQL API + Cognito Auth</div>
+                        <ul>
+                            <li>GraphQL queries/mutations</li>
+                            <li>Real-time subscriptions</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="lambda">
+                        <h4>AWS Lambda</h4>
+                        <div class="meta">Node.js / Python</div>
+                        <ul class="lambda-list">
+                            <li>queryHandler</li>
+                            <li>ragRetriever</li>
+                            <li>sqlGenerator</li>
+                            <li>sqlExecutor</li>
+                            <li>auditLogger</li>
+                            <li>syncSemantic</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="eventbridge">
+                        <h4>Amazon EventBridge</h4>
+                        <div class="meta">Async Events</div>
+                        <ul>
+                            <li>Event routing</li>
+                            <li>Retry + DLQ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">InvokeModel</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- LAYER 4: AI / ML -->
+            <div class="layer-card" data-layer="4" data-id="layer4">
+                <div class="layer-header">
+                    <div class="layer-number">4</div>
+                    <div class="layer-title">AI / ML Tier -- Amazon Bedrock (Serverless)</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="claude">
+                        <h4>Claude 3.5 Sonnet</h4>
+                        <div class="meta">NL to SQL Generation</div>
+                        <ul>
+                            <li>Structured reasoning</li>
+                            <li>SQL + explanation output</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="titan">
+                        <h4>Titan Embeddings</h4>
+                        <div class="meta">Text to 1536-dim Vectors</div>
+                        <ul>
+                            <li>Semantic similarity search</li>
+                            <li>AWS-native, no data egress</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">RDS Data API</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- LAYER 5: DATA -->
+            <div class="layer-card" data-layer="5" data-id="layer5">
+                <div class="layer-header">
+                    <div class="layer-number">5</div>
+                    <div class="layer-title">Data / Vector Store</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="aurora">
+                        <h4>Aurora PostgreSQL</h4>
+                        <div class="meta">Serverless v2 + pgvector</div>
+                        <ul>
+                            <li>Semantic metric vectors</li>
+                            <li>Schema metadata + examples</li>
+                            <li>Feedback table</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="s3-data">
+                        <h4>Amazon S3</h4>
+                        <div class="meta">Semantic YAML Store</div>
+                        <ul>
+                            <li>Versioned YAML files</li>
+                            <li>Immutable audit backup</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <div class="arrow-line"></div>
+                <div class="arrow-label">JDBC / ODBC</div>
+                <div class="arrow-head"></div>
+            </div>
+
+            <!-- LAYER 6: WAREHOUSE -->
+            <div class="layer-card" data-layer="6" data-id="layer6">
+                <div class="layer-header">
+                    <div class="layer-number">6</div>
+                    <div class="layer-title">Data Warehouse -- Snowflake (Existing + New)</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="sandbox">
+                        <h4>Sandbox Warehouse <span class="badge new">NEW</span></h4>
+                        <div class="meta">XS, Read-Only, Auto-Suspend After 1 Min Idle</div>
+                        <ul>
+                            <li>Persistent warehouse (always exists, pre-configured)</li>
+                            <li>Compute shuts off when idle (~$100-300/mo)</li>
+                            <li>Resumes in 2-5s; first query after idle is slightly slower</li>
+                            <li>AI SQL safety testing before production</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="production">
+                        <h4>Production Warehouse <span class="badge existing">EXISTING</span></h4>
+                        <div class="meta">S/M, dbt Marts, RLS</div>
+                        <ul>
+                            <li>fct_revenue, dim_members</li>
+                            <li>Semantic views (revenue_metric_vw)</li>
+                            <li>Row-Level Security (Okta groups)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAYER 7: OBSERVABILITY -->
+            <div class="layer-card" data-layer="7" data-id="layer7">
+                <div class="layer-header">
+                    <div class="layer-number">7</div>
+                    <div class="layer-title">Observability / Audit Tier</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="s3-audit">
+                        <h4>S3 Audit Logs</h4>
+                        <div class="meta">7-Year Immutable JSON</div>
+                        <ul>
+                            <li>Every query: user, SQL, result</li>
+                            <li>Partitioned by date</li>
+                            <li>Queryable via Athena</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="cloudwatch">
+                        <h4>CloudWatch</h4>
+                        <div class="meta">Metrics + Alarms</div>
+                        <ul>
+                            <li>Latency, error rate, cost</li>
+                            <li>Slack alerts on threshold</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="cloudtrail">
+                        <h4>CloudTrail</h4>
+                        <div class="meta">API Call History (Free)</div>
+                        <ul>
+                            <li>Non-repudiation</li>
+                            <li>Security forensics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAYER 8: GOVERNANCE -->
+            <div class="layer-card" data-layer="8" data-id="layer8">
+                <div class="layer-header">
+                    <div class="layer-number">8</div>
+                    <div class="layer-title">Governance / DevOps Tier</div>
+                </div>
+                <div class="layer-body">
+                    <div class="component-box" data-id="github">
+                        <h4>GitHub</h4>
+                        <div class="meta">semantic-model/*.yml</div>
+                        <ul>
+                            <li>Version-controlled definitions</li>
+                            <li>Pull request review</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="dbt">
+                        <h4>dbt Core</h4>
+                        <div class="meta">Models + Tests + Docs</div>
+                        <ul>
+                            <li>Staging + mart models</li>
+                            <li>Auto-generated docs</li>
+                        </ul>
+                    </div>
+                    <div class="component-box" data-id="cicd">
+                        <h4>GitHub Actions</h4>
+                        <div class="meta">CI/CD Pipeline</div>
+                        <ul>
+                            <li>dbt test on every push</li>
+                            <li>Auto-deploy Lambda + views</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXAMPLE WALKTHROUGH -->
+            <div class="example-section">
+                <h2>Example: "What was Q1 revenue by region?"</h2>
+
+                <div class="example-step" style="border-left-color: #4a9eed;">
+                    <strong><span class="step-label" style="background: #dbe4ff; color: #1864ab;">Layer 1-2</span> Alice (Finance) opens Chrome, already signed in via Okta SSO</strong>
+                    <span>Cognito refreshes her JWT. Amplify serves the React SPA. She sees the chat interface.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #1864ab;">
+                    <strong><span class="step-label" style="background: #e7f5ff; color: #1864ab;">Layer 2</span> Alice types: "What was Q1 revenue by region?" and hits Enter</strong>
+                    <span>React sends a GraphQL mutation to AppSync. The request includes her JWT token with Finance group.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #5f3dc4;">
+                    <strong><span class="step-label" style="background: #f3f0ff; color: #5f3dc4;">Layer 3</span> AppSync validates JWT, invokes queryHandler Lambda</strong>
+                    <span>queryHandler orchestrates: ragRetriever searches Aurora, sqlGenerator calls Claude, sqlExecutor runs the SQL.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #be4bdb;">
+                    <strong><span class="step-label" style="background: #f8d0fc; color: #be4bdb;">Layer 4-5</span> RAG retrieval: Titan embeds the question, Aurora finds similar definitions</strong>
+                    <span>Aurora returns: "Revenue = dues + sponsorships" and "fct_revenue joined to dim_region". Claude receives context + the question.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #be4bdb;">
+                    <strong><span class="step-label" style="background: #f8d0fc; color: #be4bdb;">Layer 4</span> Claude generates SQL + natural language explanation</strong>
+                    <span><code>SELECT r.region, SUM(f.dues + f.sponsorships) FROM revenue_metric_vw...</code> + "This query sums dues and sponsorships for Q1 2026 by region."</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #5f3dc4;">
+                    <strong><span class="step-label" style="background: #f3f0ff; color: #5f3dc4;">Layer 3</span> sqlExecutor validates (no DROP/DELETE/INSERT), runs in Sandbox first</strong>
+                    <span>The Sandbox warehouse resumes from auto-suspend (2-5s if idle), executes the SQL. Query returns in 2.3 seconds. Success.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #16a34a;">
+                    <strong><span class="step-label" style="background: #d3f9d8; color: #2b8a3e;">Layer 6</span> Sandbox passed. Same SQL runs in Production warehouse.</strong>
+                    <span>Snowflake RLS automatically appends WHERE org_id = 'FINANCE'. Alice sees 4 Finance regions. Bob (Membership) would see different rows.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #5f3dc4;">
+                    <strong><span class="step-label" style="background: #f3f0ff; color: #5f3dc4;">Layer 3</span> queryHandler formats the response, sends back via AppSync</strong>
+                    <span>JSON payload: summary text, chart data (Recharts bar chart), table data (first 100 rows), generated SQL, confidence score.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #1864ab;">
+                    <strong><span class="step-label" style="background: #e7f5ff; color: #1864ab;">Layer 2</span> React renders: summary card + expandable chart + data table</strong>
+                    <span>Alice sees: "Q1 2026 revenue was $2.4M, up 12% from Q4 2025." She clicks "Show Chart" and sees a bar chart. She clicks "Show SQL" to verify.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #e8590c;">
+                    <strong><span class="step-label" style="background: #fff4e6; color: #e8590c;">Layer 7</span> Background (async): auditLogger writes to S3 + CloudWatch</strong>
+                    <span>S3: JSON file with Alice's question, generated SQL, result hash, 2.3s latency, 0.03 credits. CloudWatch: latency metric incremented.</span>
+                </div>
+                <div class="example-arrow">&darr;</div>
+
+                <div class="example-step" style="border-left-color: #1864ab;">
+                    <strong><span class="step-label" style="background: #e7f5ff; color: #1864ab;">Layer 2</span> Alice gives thumbs-down: "Revenue should include event income too"</strong>
+                    <span>EventBridge fires an async event. Alice gets instant confirmation ("Feedback recorded"). A nightly Lambda will analyze patterns and propose a YAML change for review.</span>
+                </div>
+
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1.5rem; text-align: center; color: #495057; font-size: 0.9rem;">
+                    <strong>Total end-to-end time:</strong> ~4-6 seconds &nbsp;|&nbsp; <strong>Total cost:</strong> ~$0.05 per query
+                </div>
+            </div>
+
+            <!-- TEACH MODE: EXPANDABLE SECTION -->
+            <div class="layer-card" data-layer="teach" style="margin-top: 2.5rem; cursor: pointer;" onclick="toggleTeachMode(this)">
+                <div class="layer-header" style="border-bottom: none; margin-bottom: 0;">
+                    <div class="layer-number" style="background: #f59f00;">+</div>
+                    <div class="layer-title" style="color: #f59f00;">Teach Mode: How the AI Learns from Feedback</div>
+                </div>
+                <div id="teach-mode-body" style="display: none; margin-top: 1rem;">
+                    <p style="font-size: 0.9rem; color: #495057; margin-bottom: 1rem;">When users give thumbs-down feedback, the system analyzes patterns and proposes semantic model updates. Here's the full loop.</p>
+
+                    <div style="display: grid; gap: 0.75rem;">
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #e7f5ff; color: #1864ab; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 2</div>
+                            <div>
+                                <strong>Alice clicks thumbs-down and types: "Revenue should include event income too"</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">React captures the feedback and sends it via GraphQL. Alice gets instant confirmation: "Feedback recorded." No waiting.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #f3f0ff; color: #5f3dc4; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 3</div>
+                            <div>
+                                <strong>EventBridge queues the feedback event asynchronously</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">The event is stored in Aurora's feedback table with status "pending_analysis". Alice's UI response is immediate because this happens in the background.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #f3f0ff; color: #5f3dc4; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 3</div>
+                            <div>
+                                <strong>Nightly batch Lambda (2 AM UTC): analyzeFeedbackBatch runs</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">The Lambda queries all "pending_analysis" feedback from the last 24 hours. It groups similar corrections using text similarity. If 3+ users mentioned "event income" and "revenue", it forms a pattern cluster.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #f8d0fc; color: #be4bdb; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 4</div>
+                            <div>
+                                <strong>Claude analyzes the pattern and proposes a YAML change</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">Prompt: "Current definition: Revenue = dues + sponsorships. User corrections: [3 examples]. Propose a YAML change." Claude returns the updated metric formula and new synonyms.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #fff9db; color: #f59f00; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 8</div>
+                            <div>
+                                <strong>GitHub PR is created by cta-ai-bot</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">Title: "Feedback: Update revenue definition (3 users)". Body includes: AI analysis summary, proposed YAML diff, affected queries. Assigned to the data steward for review.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #fff9db; color: #f59f00; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 8</div>
+                            <div>
+                                <strong>Data steward reviews and approves the PR</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">Human checks: Does event_income column exist in fct_revenue? Will this break existing reports? Steward merges PR if valid, or comments with corrections.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #fff9db; color: #f59f00; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 8</div>
+                            <div>
+                                <strong>CI/CD auto-deploys: dbt test, build views, regenerate embeddings</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">GitHub Actions runs: dbt tests pass, revenue_metric_vw is updated with new formula, Titan generates new embeddings, Aurora pgvector is updated. Deploys in ~5 minutes.</span>
+                            </div>
+                        </div>
+                        <div class="example-arrow">&darr;</div>
+
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                            <div style="background: #e7f5ff; color: #1864ab; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; margin-top: 0.15rem;">Layer 2</div>
+                            <div>
+                                <strong>Alice asks again: "What was Q1 revenue?" -- now includes events</strong><br>
+                                <span style="font-size: 0.85rem; color: #6c757d;">Aurora retrieves the updated definition. Claude generates SQL with event_income. Alice sees $2.7M (up from $2.4M). Feedback loop closed.</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div style="margin-top: 1.25rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #f59f00;">
+                        <strong style="font-size: 0.9rem; color: #1a1a1a;">Why this works</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1.1rem; font-size: 0.85rem; color: #495057;">
+                            <li><strong>Non-blocking:</strong> Alice never waits; feedback is queued instantly</li>
+                            <li><strong>Batched:</strong> Nightly analysis finds patterns (3+ users) before acting</li>
+                            <li><strong>AI-assisted:</strong> Claude proposes the change; human decides</li>
+                            <li><strong>Version-controlled:</strong> GitHub PR = full audit trail of why definition changed</li>
+                            <li><strong>Tested:</strong> dbt validates before production deployment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: DETAIL PANEL (STICKY) -->
+        <div class="detail-column">
+            <div id="detail-panel" class="detail-panel empty">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600;">&lt;--</div>
+                <div style="font-size: 1rem; font-weight: 600; color: #495057;">Select a component</div>
+                <div class="hint">Click any card in the architecture diagram to see what it is, why we chose it, and what alternatives we rejected.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const details = {
+    browser: {
+        title: "Web Browser",
+        what: "The user-facing interface. CTA staff open Chrome, Safari, or Edge and navigate to the app's URL.",
+        why: "No software to install. Works on desktop, tablet, and phone. Staff already use browsers for Snowflake, email, and other tools.",
+        tags: ["Chosen: Responsive Web App"],
+        alts: [
+            "Native mobile app -- App store approval, separate development, overkill for ~100 staff",
+            "Desktop app (Electron) -- Auto-update complexity, security patching, larger download",
+            "VS Code extension -- Too technical for association staff",
+            "Snowflake-native app -- Preview-only, requires Snowflake-specific UI frameworks"
+        ]
+    },
+    cognito: {
+        title: "Amazon Cognito + Okta SSO",
+        what: "Cognito is AWS's user directory. It 'federates' with Okta -- meaning CTA staff use their existing Okta login (same as Snowflake, email) to access the AI app.",
+        why: "No separate password. Security team manages users in one place (Okta). Cognito translates Okta groups ('Finance', 'Membership') into AWS permissions for Snowflake RLS.",
+        tags: ["Chosen: Cognito + Okta Federation"],
+        alts: [
+            "Auth0 -- Great but another vendor to manage and pay for",
+            "Cognito standalone -- Would require migrating all CTA users into AWS; duplication",
+            "Custom JWT auth -- Building our own login system is a security nightmare"
+        ]
+    },
+    amplify: {
+        title: "AWS Amplify Gen 2",
+        what: "AWS service that hosts the React app, builds it from GitHub pushes, and provides a backend framework with built-in Cognito + AppSync integration.",
+        why: "Gen 2 uses infrastructure-as-code (TypeScript defines the backend), so the entire setup is version-controlled in GitHub. Good for beginners because it generates boilerplate and wires services together automatically.",
+        tags: ["Chosen: Amplify Gen 2"],
+        alts: [
+            "Vercel / Netlify -- Great hosting, but manual Cognito + AppSync integration; external vendor",
+            "S3 + CloudFront -- Cheaper but manual auth, API, and CI/CD configuration",
+            "EC2 server -- 24/7 server requires patching, monitoring, SSL management"
+        ]
+    },
+    react: {
+        title: "React 18 + Recharts",
+        what: "React is the industry-standard JavaScript library for building user interfaces. Recharts is a lightweight charting library for bar, line, and pie charts.",
+        why: "React has the largest community, most tutorials, and best AWS Amplify integration. Recharts is open-source with no licensing fees and simple API.",
+        tags: ["Chosen: React + Recharts"],
+        alts: [
+            "Vue.js / Svelte -- Good frameworks, but fewer AWS Amplify examples",
+            "QuickSight embed -- AWS BI tool; $12/user/month, slow to load, overkill",
+            "D3.js -- More powerful but steep learning curve for novice frontend dev"
+        ]
+    },
+    appsync: {
+        title: "AWS AppSync",
+        what: "Managed GraphQL API service. Receives requests from React, checks authentication (via Cognito), routes to Lambda, and can cache responses.",
+        why: "GraphQL allows the frontend to request exactly the fields it needs (answer + chart + SQL) in one request instead of 3 REST calls. Built-in auth integration and caching reduce latency.",
+        tags: ["Chosen: AppSync (GraphQL)"],
+        alts: [
+            "API Gateway (REST) -- Simpler, but multiple round-trips for complex queries; no built-in caching",
+            "ALB (Load Balancer) -- Too low-level; would build auth, routing, caching ourselves",
+            "Direct Lambda URL -- Bypasses auth checks; insecure for user-facing APIs"
+        ]
+    },
+    lambda: {
+        title: "AWS Lambda (6 Functions)",
+        what: "Serverless functions that run only when called. No server to manage. Scale automatically from 0 to 1000 instances.",
+        why: "CTA has ~100 staff, maybe 10-20 concurrent queries at peak. Lambda is perfect for this burst-y, low-volume pattern. Pay per millisecond (~$0.20 per 1M requests).",
+        tags: ["Chosen: Lambda (Serverless)"],
+        alts: [
+            "ECS/Fargate containers -- Good for long-running services, but more complexity",
+            "EC2 instances -- Cheaper at high scale, but requires patching, monitoring",
+            "Step Functions -- Good for complex workflows, but $0.025 per transition adds up"
+        ]
+    },
+    eventbridge: {
+        title: "Amazon EventBridge",
+        what: "Event bus that routes notifications between services asynchronously. Fire-and-forget: send an event, return immediately, process later.",
+        why: "When a user gives thumbs-down feedback, they shouldn't wait while Bedrock analyzes the correction. EventBridge queues the event; a nightly Lambda picks it up.",
+        tags: ["Chosen: EventBridge"],
+        alts: [
+            "SQS -- Cheaper but simple FIFO queue; no event routing logic",
+            "SNS -- Notifications, not queued work; less flexible routing",
+            "Kafka -- Industry standard for high-throughput; overkill for 100 queries/day"
+        ]
+    },
+    claude: {
+        title: "Claude 3.5 Sonnet (Bedrock)",
+        what: "Large Language Model by Anthropic, accessed via AWS Bedrock. Converts natural language questions + retrieved context into SQL queries.",
+        why: "Best-in-class for structured reasoning (SQL requires precision). 'Sonnet' is the balanced tier: faster than 'Opus', smarter than 'Haiku'. Available via Bedrock so no separate Anthropic contract.",
+        tags: ["Chosen: Claude 3.5 Sonnet"],
+        alts: [
+            "GPT-4 (OpenAI) -- Not available in Bedrock; requires separate API key; data leaves AWS",
+            "Claude 3 Opus -- More capable but 6x more expensive and slower; overkill",
+            "Claude 3 Haiku -- Cheaper/faster but more SQL syntax errors; risky for data",
+            "Open-source models (Llama, Mistral) -- Cheaper to run but require GPU infrastructure",
+            "Snowflake Cortex -- Built-in but less flexible; enterprise edition required"
+        ]
+    },
+    titan: {
+        title: "Titan Embeddings (Bedrock)",
+        what: "Amazon's embedding model. Converts text into 1536-dimensional vectors so we can search by meaning, not just keywords.",
+        why: "Native AWS integration -- no external API keys, no data leaves AWS. 1536 dimensions is the standard size (compatible with OpenAI Ada if we migrate later).",
+        tags: ["Chosen: Titan Embeddings"],
+        alts: [
+            "OpenAI Ada-002 -- Better quality but data leaves AWS; compliance concern for CTA",
+            "Cohere Embed -- Good multilingual support; not needed for English-only CTA",
+            "Self-hosted (Sentence-BERT) -- Requires GPU server; more infrastructure to manage"
+        ]
+    },
+    aurora: {
+        title: "Aurora PostgreSQL + pgvector",
+        what: "Amazon's managed PostgreSQL database (auto-scales, backups, patching) with the open-source pgvector extension for similarity search on vectors.",
+        why: "Single database handles both relational data (feedback, query history) AND vector search. Cheaper than dedicated vector DBs at our scale (~100 queries/day). Serverless v2 scales to zero when idle (~$0.01/hour).",
+        tags: ["Chosen: Aurora Serverless v2 + pgvector"],
+        alts: [
+            "Pinecone -- Popular vector DB; $70/month minimum; overkill for our scale",
+            "OpenSearch -- Supports full-text + vector; more complex to configure",
+            "DynamoDB -- NoSQL; no vector support; would need separate service",
+            "Self-hosted pgvector on EC2 -- Cheaper but manual backups, patching, scaling"
+        ]
+    },
+    "s3-data": {
+        title: "Amazon S3 (Semantic Store)",
+        what: "Object storage for YAML semantic model files and backup of generated embeddings.",
+        why: "Infinite storage, 99.999999999% durability, versioning built-in. Costs ~$0.023/GB/month. Acts as a staging area for CI/CD and a backup if Aurora is rebuilt.",
+        tags: ["Chosen: S3 Standard"],
+        alts: [
+            "Git LFS -- Designed for binary files; YAML is text; unnecessary",
+            "DynamoDB -- Would require converting YAML to JSON; adds complexity",
+            "Snowflake stage -- Could store files in Snowflake; slower access for Lambda"
+        ]
+    },
+    sandbox: {
+        title: "Snowflake Sandbox Warehouse",
+        what: "Extra-small (XS) Snowflake warehouse. Zero-copy clone of Production data. Read-only. Auto-suspends after 1 minute of inactivity.",
+        why: "AI-generated SQL might be wrong (syntax errors, infinite loops, missing LIMIT). Sandbox lets us test safely before touching Production. Zero-copy means same data, no storage cost, no data movement.",
+        tags: ["Chosen: XS Warehouse (New)"],
+        alts: [
+            "Single warehouse with read-only user -- Read-only can't drop tables, but bad SELECT can still scan terabytes (expensive)",
+            "Local SQLite for testing -- Doesn't match Snowflake's SQL dialect; false positives/negatives",
+            "No sandbox (direct to Production) -- Too risky; one bad query could cost hundreds of dollars"
+        ]
+    },
+    production: {
+        title: "Snowflake Production Warehouse",
+        what: "CTA's existing Snowflake warehouse where all business data lives. dbt models create staging tables, marts, and semantic views. RLS policies enforce row-level access.",
+        why: "You already have this. The AI app is just another client -- like Tableau, or you running a query in the Snowflake UI. dbt models already define 'revenue', 'active members', etc.",
+        tags: ["Chosen: Existing S/M Warehouse"],
+        alts: [
+            "Move data out of Snowflake -- Not an option; years of data, existing dbt models, trained staff",
+            "Replace Snowflake with something else -- Would require rebuilding entire data infrastructure",
+            "Create a separate 'AI-only' database -- Duplicates data, sync latency, extra cost"
+        ]
+    },
+    "s3-audit": {
+        title: "S3 Audit Logs",
+        what: "Immutable JSON files recording every AI-generated query: who asked, what SQL was generated, execution time, credits consumed, result hash.",
+        why: "Immutable (can't be changed). 7-year retention for nonprofit compliance. Partitioned by date for Athena querying. Separation of concerns: even if app is compromised, audit trail is in separate S3 bucket.",
+        tags: ["Chosen: S3 + Object Lock"],
+        alts: [
+            "CloudWatch Logs -- 30-day default retention; expensive for long-term storage",
+            "Snowflake audit table -- Same system being audited; compromised together",
+            "DynamoDB -- Good for querying recent data; expensive for 7-year immutable history"
+        ]
+    },
+    cloudwatch: {
+        title: "Amazon CloudWatch",
+        what: "AWS's built-in monitoring: metrics, dashboards, alarms, and logs.",
+        why: "Native AWS integration -- no setup required. Automatic from Lambda, AppSync, Aurora. Alarms can send Slack alerts or trigger auto-scaling. Free tier covers our scale.",
+        tags: ["Chosen: CloudWatch"],
+        alts: [
+            "Datadog -- Industry standard, beautiful dashboards; $70/host/month; overkill for our scale",
+            "Grafana + Prometheus -- Open-source but requires running servers for Grafana",
+            "New Relic -- Good APM but adds another vendor contract and cost"
+        ]
+    },
+    cloudtrail: {
+        title: "AWS CloudTrail",
+        what: "Records every AWS API call at the infrastructure level: who invoked what, when, from what IP address.",
+        why: "Non-repudiation (proves who did what). Security forensics (trace leaked data). Compliance (SOC 2, nonprofit audit standards). FREE for management events -- no extra cost.",
+        tags: ["Chosen: CloudTrail (Free)"],
+        alts: [
+            "Custom logging in Lambda -- We'd have to log every call manually; guaranteed to miss some",
+            "VPC Flow Logs -- Logs network traffic, not API-level actions; too granular",
+            "Third-party SIEM (Splunk, Sentinel) -- Powerful but $$$ and complex setup for single app"
+        ]
+    },
+    github: {
+        title: "GitHub",
+        what: "Version-controlled YAML files defining the AI's business knowledge: metrics, synonyms, table relationships, verified query examples.",
+        why: "Git provides immutable history (who changed what, when, why). Pull requests enable review before deployment. Rollback in seconds if a change breaks queries. Branch protection prevents direct changes to main.",
+        tags: ["Chosen: GitHub (YAML-as-Code)"],
+        alts: [
+            "Database table for semantic model -- No version history, hard to review, no rollback",
+            "Confluence / Google Docs -- No structured format, no validation, no CI/CD integration",
+            "Snowflake as source of truth -- Hard to diff, review, or rollback view definitions"
+        ]
+    },
+    dbt: {
+        title: "dbt Core",
+        what: "Data Build Tool -- open-source framework that transforms raw data into clean, tested, documented models. CTA already uses this.",
+        why: "Tests validate semantic views (e.g., 'revenue should be positive'). Documentation auto-generates data dictionary. Lineage shows dependencies. Same tool CTA DataOps team already knows.",
+        tags: ["Chosen: dbt Core (Existing)"],
+        alts: [
+            "Custom Python scripts -- We'd build our own testing framework; dbt already exists and is better",
+            "Stored procedures in Snowflake -- Hard to version control, test, or document",
+            "Airflow / Prefect -- Orchestration tools, not transformation/testing tools; complementary, not replacement"
+        ]
+    },
+    cicd: {
+        title: "GitHub Actions",
+        what: "CI/CD pipeline that runs automatically on every git push to main: test dbt models, deploy Lambda code, sync YAML to Aurora vectors and Snowflake views.",
+        why: "Same YAML syntax as our semantic model. Native GitHub integration -- no separate CI/CD server. Free for private repos up to 2,000 minutes/month (more than enough). Better community docs than AWS CodePipeline.",
+        tags: ["Chosen: GitHub Actions"],
+        alts: [
+            "AWS CodePipeline -- AWS-native but harder to configure and debug; steeper learning curve",
+            "CircleCI / TravisCI -- Good services but adds another vendor when Actions is included",
+            "Jenkins -- Powerful but requires running and maintaining a server; not serverless",
+            "Manual deployment -- Log into AWS console, click deploy; error-prone, not repeatable, no audit trail"
+        ]
+    }
+};
+
+const panel = document.getElementById('detail-panel');
+
+// Toggle teach mode section
+function toggleTeachMode(card) {
+    const body = document.getElementById('teach-mode-body');
+    const isVisible = body.style.display === 'block';
+    body.style.display = isVisible ? 'none' : 'block';
+    card.classList.toggle('active', !isVisible);
+}
+
+// Click handler for component boxes
+document.querySelectorAll('.component-box').forEach(el => {
+    el.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        // Toggle active state
+        const wasActive = el.classList.contains('active');
+        document.querySelectorAll('.component-box').forEach(c => c.classList.remove('active'));
+
+        if (wasActive) {
+            panel.className = 'detail-panel empty';
+            panel.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600;">&lt;--</div>
+                <div style="font-size: 1rem; font-weight: 600; color: #495057;">Select a component</div>
+                <div class="hint">Click any card in the architecture diagram to see what it is, why we chose it, and what alternatives we rejected.</div>
+            `;
+            return;
+        }
+
+        el.classList.add('active');
+
+        const id = el.dataset.id;
+        const d = details[id];
+        if (!d) return;
+
+        // Build detail content
+        let html = `<h3>${d.title}</h3>`;
+
+        html += `<div class="detail-section"><h4>What it is</h4><p>${d.what}</p></div>`;
+        html += `<div class="detail-section"><h4>Why we chose it</h4><p>${d.why}</p></div>`;
+
+        if (d.tags) {
+            html += `<div class="detail-section"><h4>Decision</h4><p>${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}</p></div>`;
+        }
+
+        if (d.alts) {
+            html += `<div class="detail-section"><h4>Alternatives rejected</h4><ul>${d.alts.map(a => `<li>${a}</li>`).join('')}</ul></div>`;
+        }
+
+        panel.className = 'detail-panel';
+        panel.innerHTML = html;
+    });
+});
+
+// Close panel when clicking outside components
+document.querySelector('.layers-column').addEventListener('click', (e) => {
+    if (e.target.closest('.component-box')) return;
+
+    document.querySelectorAll('.component-box').forEach(c => c.classList.remove('active'));
+    panel.className = 'detail-panel empty';
+    panel.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600;">&lt;--</div>
+        <div style="font-size: 1rem; font-weight: 600; color: #495057;">Select a component</div>
+        <div class="hint">Click any card in the architecture diagram to see what it is, why we chose it, and what alternatives we rejected.</div>
+    `;
+});
+</script>
+
+</body>
+</html>

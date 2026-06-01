@@ -1,10 +1,22 @@
 # Documentation index
 
+## Start here
+
+| Doc | Purpose |
+|-----|---------|
+| [PHASES.md](PHASES.md) | **Which files to run for Phase 1, 2, or 3** |
+| [PHASE3-AMPLIFY-GETTING-STARTED.md](PHASE3-AMPLIFY-GETTING-STARTED.md) | **Phase 3A (parked):** SSO, CDK bootstrap, Amplify sandbox |
+| [plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md](plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md) | **Phase 3B (active):** CopilotKit + `ui/` + `api/` |
+| [solutions/aws-amplify-cdk-bootstrap-blocked.md](solutions/aws-amplify-cdk-bootstrap-blocked.md) | Why Amplify is blocked + IT unblock steps |
+| [solutions/copilotkit-local-ui-learnings.md](solutions/copilotkit-local-ui-learnings.md) | **Phase 3B:** CopilotKit + AG-UI errors we hit and fixes |
+| [../README.md](../README.md) | Repo setup and quick commands |
+
 ## Plans (implementation)
 
 | Doc | Purpose |
 |-----|---------|
 | [2026-05-28-002 simple sandbox POC](plans/2026-05-28-002-feat-simple-ai-nl2sql-poc-plan.md) | Phase 1: personal AWS + Snowflake, 2–3 days |
+| [2026-05-29-004 CopilotKit local UI](plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md) | Phase 3B: CopilotKit + FastAPI (active) |
 | [2026-05-29-003 Deep Agents upgrade](plans/2026-05-29-003-feat-deep-agents-nl2sql-upgrade-plan.md) | Phase 2: tool-calling agent on top of baseline |
 | [2026-06-01-004 Wren + Cortex harness](plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) | Phase 4: Wren `main` vs Cortex Analyst (no v1 / no Wren UI) |
 | [2026-06-01-005 CopilotKit semantic toggle](plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md) | Off / Wren / Cortex switch in existing Copilot UI |
