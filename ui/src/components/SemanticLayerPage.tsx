@@ -2,6 +2,7 @@ import type { SemanticLayerMode } from "../config";
 import { useSemanticConsumers } from "../hooks/useSemanticConsumers";
 import type { SemanticConsumer } from "../types/semanticEditor";
 import { SemanticFileEditor } from "./SemanticFileEditor";
+import { SemanticPrWizard } from "./SemanticPrWizard";
 import "./SemanticLayerPage.css";
 
 function modeLabel(mode: SemanticConsumer["mode"]): string {
@@ -62,6 +63,7 @@ export function SemanticLayerPage({ activeSemanticMode }: Props) {
 
           <div id="semantic-file-editor">
             <SemanticFileEditor />
+            <SemanticPrWizard />
           </div>
         </div>
       ) : null}

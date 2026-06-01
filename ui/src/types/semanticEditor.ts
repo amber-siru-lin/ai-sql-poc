@@ -53,3 +53,45 @@ export type SemanticValidateResponse = {
   stderr: string;
   message: string;
 };
+
+export type SemanticPrConfigResponse = {
+  configured: boolean;
+  token_present: boolean;
+  repo: string;
+  default_branch: string;
+};
+
+export type SemanticPrDraftResponse = {
+  title: string;
+  body: string;
+  paths: string[];
+  base_branch: string;
+  branch_name: string;
+  github: {
+    configured: boolean;
+    repo: string;
+    default_branch: string;
+  };
+  diff_stat: string;
+};
+
+export type SemanticPrCreateRequest = {
+  title: string;
+  body: string;
+  paths?: string[];
+  base_branch?: string;
+  branch_name?: string;
+  audit_entry_ids?: string[];
+  require_validate?: boolean;
+};
+
+export type SemanticPrCreateResponse = {
+  ok: boolean;
+  branch: string;
+  base_branch: string;
+  commit_sha: string;
+  paths: string[];
+  pr_number: number;
+  pr_url: string;
+  pr_title: string;
+};

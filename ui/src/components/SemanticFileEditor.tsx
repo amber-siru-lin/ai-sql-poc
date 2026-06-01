@@ -18,6 +18,7 @@ export function SemanticFileEditor() {
     saveStatus,
     selectPath,
     saveFile,
+    discardChanges,
     validating,
     validateResult,
     validate,
@@ -49,6 +50,14 @@ export function SemanticFileEditor() {
           disabled={treeLoading}
         >
           Reload tree
+        </button>
+        <button
+          type="button"
+          className="semantic-editor__btn"
+          onClick={() => void discardChanges()}
+          disabled={!selectedPath || !isDirty || fileLoading}
+        >
+          Discard
         </button>
         <button
           type="button"

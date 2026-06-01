@@ -42,7 +42,11 @@ from src.checkpoint_factory import checkpoint_backend, init_checkpointer_from_en
 from src.check_setup import check_all
 from src.semantic_editor import (
     SemanticPathError,
+    SemanticPrError,
     build_consumers_response,
+    build_pr_draft,
+    create_semantic_pr,
+    github_config,
     list_semantic_files,
     read_semantic_file,
     run_wren_validate,
@@ -154,6 +158,52 @@ def semantic_file_put(path: str, body: SemanticFileWriteRequest):
 def semantic_validate():
     """Run ``wren context validate`` for wren/tpch."""
     return run_wren_validate()
+
+
+@app.get("/api/semantic/pr/config")
+def semantic_pr_config():
+    """GitHub PR settings (token presence only — never returns the token)."""
+    return github_config()
+
+
+@app.get("/api/semantic/pr/draft")
+def semantic_pr_draft(
+    paths: str | None = None,
+    base_branch: str | None = None,
+):
+    """Suggest PR title/body from current semantic layer diffs."""
+    path_list = [p.strip() for p in paths.split(",") if p.strip()] if paths else None
+    try:
+        return build_pr_draft(paths=path_list, base_branch=base_branch)
+    except SemanticPrError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+class SemanticPrCreateRequest(BaseModel):
+    title: str
+    body: str
+    paths: list[str] | None = None
+    base_branch: str | None = None
+    branch_name: str | None = None
+    audit_entry_ids: list[str] | None = None
+    require_validate: bool = True
+
+
+@app.post("/api/semantic/pr")
+def semantic_pr_create(body: SemanticPrCreateRequest):
+    """Commit allowlisted semantic changes and open a GitHub pull request."""
+    try:
+        return create_semantic_pr(
+            title=body.title,
+            body=body.body,
+            paths=body.paths,
+            base_branch=body.base_branch,
+            branch_name=body.branch_name,
+            audit_entry_ids=body.audit_entry_ids,
+            require_validate=body.require_validate,
+        )
+    except SemanticPrError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/status")
