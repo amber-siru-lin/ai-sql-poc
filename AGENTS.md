@@ -23,6 +23,8 @@ cd ui && npm run dev
 
 Default URLs: API `http://localhost:8000`, UI `http://localhost:5173`.
 
+**Semantic layer editor:** third app view with its own agent at `POST /semantic-agent` (`semantic_editor`). Restart the API after changes under `src/semantic_editor/` or semantic REST routes in `api/main.py`. See [docs/architecture/semantic-layer-editor.md](docs/architecture/semantic-layer-editor.md).
+
 See [api/README.md](api/README.md) and [docs/audit-logs/README.md](docs/audit-logs/README.md).
 
 ---

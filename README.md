@@ -104,6 +104,7 @@ Deep dive: [NL→SQL harness comparison](docs/architecture/nl2sql-harness-compar
 .
 ├── src/                    # Python POC (Phase 1 + 2 + shared agent)
 │   ├── agent_factory.py    # Deep Agent graph (CLI + API)
+│   ├── semantic_editor/    # Editor agent, file APIs, PR workflow (plan 006)
 │   ├── nl2sql.py           # Phase 1 core: ChatBedrock + Snowflake
 │   ├── run_baseline_test.py
 │   ├── ask_questions.py    # Phase 1 interactive
@@ -174,7 +175,7 @@ Type `clear` in the REPL to reset conversation memory.
 
 **Files:** `ui/` · `api/` · `wren/tpch/` · `src/agent_factory.py` (shared with Phase 2 CLI)
 
-**Active path:** CopilotKit + Vite in `ui/`, FastAPI agent server in `api/`. Header **Semantics**: **Off** | **Wren** | **Cortex** (placeholder).
+**Active path:** CopilotKit + Vite in `ui/`, FastAPI agent server in `api/`. Three views: **Chat**, **Audit logs**, **Semantic layer** (MDL editor + PR workflow + editor AI). Header **Semantics**: **Off** | **Wren** | **Cortex** (applies to chat only).
 
 **Parked path:** `web/` Amplify Gen 2 — blocked on CDK bootstrap ([learnings](docs/solutions/aws-amplify-cdk-bootstrap-blocked.md)).
 
@@ -201,9 +202,9 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 cd ui && npm run dev
 ```
 
-Open **http://localhost:5173** — chat in the **SQL Assistant** panel on the right.
+Open **http://localhost:5173** — **Chat** uses the SQL Assistant on the right; **Semantic layer** adds file edit, validate, PR, and a separate editor AI agent.
 
-Details: [ui/README.md](ui/README.md) · [wren/tpch/README.md](wren/tpch/README.md) · [docs/PHASES.md](docs/PHASES.md#phase-3b--copilotkit-active-local)
+Details: [ui/README.md](ui/README.md) · [Semantic layer editor](docs/architecture/semantic-layer-editor.md) · [wren/tpch/README.md](wren/tpch/README.md) · [docs/PHASES.md](docs/PHASES.md#phase-3b--copilotkit-active-local)
 
 ---
 
@@ -252,6 +253,7 @@ See [config/README.md](config/README.md) for credential setup.
 
 - [docs/PHASES.md](docs/PHASES.md) — isolate Phase 1 / 2 / 3
 - [docs/README.md](docs/README.md) — plans and requirements index
+- [Semantic layer editor](docs/architecture/semantic-layer-editor.md) — file editor, PR workflow, dual agents
 - [NL→SQL harness comparison](docs/architecture/nl2sql-harness-comparison.md) — Deep Agents, Claude SDK, Wren, Cortex
 - [Wren vs Cortex Analyst](docs/architecture/wren-vs-snowflake-cortex-analyst.md)
 - [Agent error handling](docs/architecture/agent-error-handling.md)
