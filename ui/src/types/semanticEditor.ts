@@ -23,3 +23,33 @@ export type SemanticConsumersResponse = {
   semantic_layer: SemanticLayerStatus;
   consumers: SemanticConsumer[];
 };
+
+export type SemanticFileEntry = {
+  path: string;
+  size: number;
+  modified: number;
+};
+
+export type SemanticTreeResponse = {
+  roots: string[];
+  files: SemanticFileEntry[];
+};
+
+export type SemanticFileResponse = {
+  path: string;
+  content: string;
+};
+
+export type SemanticFileSaveResponse = {
+  path: string;
+  saved: boolean;
+  size: number;
+};
+
+export type SemanticValidateResponse = {
+  ok: boolean;
+  exit_code: number | null;
+  stdout: string;
+  stderr: string;
+  message: string;
+};

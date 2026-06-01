@@ -39,7 +39,14 @@ from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
 from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.check_setup import check_all
-from src.semantic_editor import build_consumers_response
+from src.semantic_editor import (
+    SemanticPathError,
+    build_consumers_response,
+    list_semantic_files,
+    read_semantic_file,
+    run_wren_validate,
+    write_semantic_file,
+)
 from src.semantic_layer.types import SEMANTIC_LAYER_MODES, DEFAULT_SEMANTIC_LAYER
 from src.tools.cortex_tools import cortex_ready
 from src.tools.wren_tools import wren_ready
@@ -107,6 +114,45 @@ def semantic_consumers():
     """Manifest of runtime consumers and git paths for the semantic layer editor."""
     status_block = _semantic_layer_status()
     return build_consumers_response(status_block)
+
+
+@app.get("/api/semantic/tree")
+def semantic_tree(root: str | None = None):
+    """List editable semantic layer files under allowlisted roots."""
+    try:
+        return list_semantic_files(root=root)
+    except SemanticPathError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/semantic/file")
+def semantic_file_get(path: str):
+    """Read one allowlisted semantic layer file."""
+    try:
+        return read_semantic_file(path)
+    except SemanticPathError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"not found: {path}") from exc
+
+
+class SemanticFileWriteRequest(BaseModel):
+    content: str
+
+
+@app.put("/api/semantic/file")
+def semantic_file_put(path: str, body: SemanticFileWriteRequest):
+    """Write one allowlisted semantic layer file."""
+    try:
+        return write_semantic_file(path, body.content)
+    except SemanticPathError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/semantic/validate")
+def semantic_validate():
+    """Run ``wren context validate`` for wren/tpch."""
+    return run_wren_validate()
 
 
 @app.get("/api/status")
