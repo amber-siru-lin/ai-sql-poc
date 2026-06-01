@@ -49,4 +49,4 @@ VITE_COPILOT_RUNTIME_URL=http://localhost:8000/copilotkit
 
 Plan: [docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md](../docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md)
 
-**Where queries & memory are stored:** [docs/architecture/query-and-memory-storage.md](../docs/architecture/query-and-memory-storage.md)
+**Where queries & memory are stored:** [docs/architecture/query-and-memory-storage.md](../docs/architecture/query-and-memory-storage.md) · [Chat memory & sessions](../docs/architecture/chat-memory-and-sessions.md)

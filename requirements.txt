@@ -17,5 +17,13 @@ uvicorn[standard]>=0.48
 copilotkit>=0.1.93
 ag-ui-langgraph>=0.0.37
 
+# Phase 3.6: durable LangGraph checkpoints (optional — set DATABASE_URL)
+langgraph-checkpoint-postgres
+psycopg[binary]>=3.2
+psycopg-pool>=3.2
+# Keep compatible with wrenai (pyasn1>=0.6.3) and google-auth stack
+pyasn1>=0.6.3
+pyasn1-modules>=0.4.1
+
 # Phase 4: Wren semantic layer (optional — for Wren mode in UI)
 # pip install "wrenai[snowflake,memory]" pyyaml

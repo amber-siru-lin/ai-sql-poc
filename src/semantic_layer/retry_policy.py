@@ -55,7 +55,7 @@ def classify_sql_error(message: str) -> tuple[str, bool]:
     if message.startswith("ERROR:") and "disabled" in message.lower():
         return "disabled_tool", False
     lower = message.lower()
-    if "use_mdl_models" in lower:
+    if "use_mdl_models" in lower or "use_modeled_sql_only" in lower:
         return "use_mdl_models", True
     if (
         "does not exist" in lower

@@ -19,12 +19,20 @@ from src.semantic_layer.types import normalize_semantic_layer
 logger = logging.getLogger(__name__)
 
 
+def _semantic_layer_from_forwarded(forwarded: dict) -> str:
+    """UI sends camelCase ``semanticLayer``; accept snake_case too."""
+    raw = forwarded.get("semantic_layer")
+    if raw is None:
+        raw = forwarded.get("semanticLayer")
+    return normalize_semantic_layer(raw)
+
+
 class SemanticLayerLangGraphAgent(LangGraphAgent):
     """Injects ``semantic_layer`` from AG-UI ``forwarded_props`` into RunnableConfig."""
 
     async def prepare_stream(self, input, agent_state, config):
         forwarded = input.forwarded_props or {}
-        mode = normalize_semantic_layer(forwarded.get("semantic_layer"))
+        mode = _semantic_layer_from_forwarded(forwarded)
         config = ensure_config(config)
         configurable = dict(config.get("configurable") or {})
         configurable["semantic_layer"] = mode
@@ -37,7 +45,7 @@ class SemanticLayerLangGraphAgent(LangGraphAgent):
 
     async def run(self, input: RunAgentInput) -> AsyncGenerator:
         forwarded = input.forwarded_props or {}
-        semantic_layer = normalize_semantic_layer(forwarded.get("semantic_layer"))
+        semantic_layer = _semantic_layer_from_forwarded(forwarded)
         thread_id = input.thread_id or str(uuid.uuid4())
         run_id = input.run_id
         question = last_user_question(input.messages or [])

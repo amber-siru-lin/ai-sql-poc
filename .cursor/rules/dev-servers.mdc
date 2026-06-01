@@ -1,0 +1,16 @@
+---
+description: Restart local API/UI when needed without asking the user first
+alwaysApply: true
+---
+
+# Dev servers
+
+When backend code, `.env`, or audit/S3 config changes—or the API is offline or stale—restart the FastAPI server yourself (background shell on port 8000). Do not only tell the user to restart unless they asked for manual steps.
+
+```bash
+export AWS_PROFILE="${AWS_PROFILE:-Brainfore-Team-Set-654654461736}"
+lsof -ti :8000 2>/dev/null | xargs kill 2>/dev/null; sleep 1
+scripts/py -m uvicorn api.main:app --reload --port 8000
+```
+
+Confirm with `curl -s http://localhost:8000/api/status`. Full notes: [AGENTS.md](../../AGENTS.md).

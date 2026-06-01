@@ -1,4 +1,4 @@
-"""Append-only audit log for agent runs (local JSONL + optional S3)."""
+"""Append-only audit log for agent runs (S3 by default when bucket is set)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,11 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
+
+AuditDestination = Literal["s3", "local", "both"]
 
 SQL_TOOL_NAMES = frozenset(
     {
@@ -21,39 +22,76 @@ SQL_TOOL_NAMES = frozenset(
     }
 )
 
-DEFAULT_LOCAL_DIR = Path("logs/audit")
 DEFAULT_S3_PREFIX = "audit/"
 
 
-def audit_config() -> dict[str, Any]:
+def _resolve_destination() -> AuditDestination:
+    raw = os.environ.get("AUDIT_DESTINATION", "").strip().lower()
+    bucket = os.environ.get("AUDIT_S3_BUCKET", "").strip()
+    if raw in ("s3", "local", "both"):
+        return raw  # type: ignore[return-value]
+    return "s3" if bucket else "local"
+
+
+def audit_config(*, check_s3: bool = False) -> dict[str, Any]:
     """Resolved audit destinations (for status endpoints and docs)."""
     bucket = os.environ.get("AUDIT_S3_BUCKET", "").strip()
     prefix = os.environ.get("AUDIT_S3_PREFIX", DEFAULT_S3_PREFIX).strip() or DEFAULT_S3_PREFIX
     if not prefix.endswith("/"):
         prefix += "/"
-    local_dir = Path(os.environ.get("AUDIT_LOCAL_DIR", DEFAULT_LOCAL_DIR))
-    return {
+    destination = _resolve_destination()
+    cfg: dict[str, Any] = {
+        "destination": destination,
         "s3_bucket": bucket or None,
         "s3_prefix": prefix,
-        "local_dir": str(local_dir),
-        "enabled": True,
+        "local_dir": None,
+        "enabled": destination != "local" or bool(bucket),
     }
+    if check_s3 and destination in ("s3", "both") and bucket:
+        cfg.update(check_audit_s3())
+    elif destination == "s3" and not bucket:
+        cfg["s3_status"] = "not_configured"
+        cfg["s3_message"] = "Set AUDIT_S3_BUCKET in .env"
+    else:
+        cfg["s3_status"] = "not_configured"
+        cfg["s3_message"] = "Audit uses local JSONL only (AUDIT_DESTINATION=local)"
+    return cfg
 
 
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parent.parent
+def _s3_client():
+    import boto3
+
+    region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+    return boto3.client("s3", region_name=region)
 
 
-def _local_audit_path(when: datetime | None = None) -> Path:
-    when = when or datetime.now(UTC)
-    day = when.strftime("%Y-%m-%d")
-    cfg = audit_config()
-    path = _repo_root() / cfg["local_dir"] / f"{day}.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
+def check_audit_s3() -> dict[str, str]:
+    """Probe S3 bucket access for audit writes and reads."""
+    bucket = os.environ.get("AUDIT_S3_BUCKET", "").strip()
+    if not bucket:
+        return {
+            "s3_status": "not_configured",
+            "s3_message": "AUDIT_S3_BUCKET not set",
+        }
+    prefix = audit_config()["s3_prefix"]
+    try:
+        client = _s3_client()
+        client.head_bucket(Bucket=bucket)
+        client.list_objects_v2(Bucket=bucket, Prefix=prefix, MaxKeys=1)
+        return {
+            "s3_status": "ok",
+            "s3_message": f"Writing to s3://{bucket}/{prefix}",
+        }
+    except Exception as exc:
+        logger.debug("audit S3 check failed: %s", exc)
+        return {
+            "s3_status": "error",
+            "s3_message": str(exc),
+        }
 
 
-def _s3_key(record: dict[str, Any], prefix: str) -> str:
+def s3_key_for_record(record: dict[str, Any], prefix: str | None = None) -> str:
+    prefix = prefix or audit_config()["s3_prefix"]
     when = datetime.fromisoformat(record["timestamp"].replace("Z", "+00:00"))
     run_id = record.get("run_id") or "unknown"
     thread_id = record.get("thread_id") or "unknown"
@@ -67,31 +105,19 @@ def _put_s3(record: dict[str, Any]) -> str | None:
     if not bucket:
         return None
     try:
-        import boto3
-    except ImportError:
-        logger.warning("boto3 not installed; skipping S3 audit upload")
+        key = s3_key_for_record(record)
+        body = json.dumps(record, ensure_ascii=False, default=str).encode("utf-8")
+        client = _s3_client()
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=body,
+            ContentType="application/json",
+        )
+        return f"s3://{bucket}/{key}"
+    except Exception:
+        logger.exception("Failed to write S3 audit log")
         return None
-
-    prefix = audit_config()["s3_prefix"]
-    key = _s3_key(record, prefix)
-    body = json.dumps(record, ensure_ascii=False, default=str).encode("utf-8")
-    region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
-    client = boto3.client("s3", region_name=region)
-    client.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=body,
-        ContentType="application/json",
-    )
-    return f"s3://{bucket}/{key}"
-
-
-def _append_local(record: dict[str, Any]) -> Path:
-    path = _local_audit_path()
-    line = json.dumps(record, ensure_ascii=False, default=str) + "\n"
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(line)
-    return path
 
 
 def result_fingerprint(text: str | None, *, max_chars: int = 4096) -> str | None:
@@ -102,19 +128,22 @@ def result_fingerprint(text: str | None, *, max_chars: int = 4096) -> str | None
 
 
 def write_audit_record(record: dict[str, Any]) -> dict[str, str | None]:
-    """Persist one audit record. Returns paths written (local file, s3 uri)."""
+    """Persist one audit record. Returns destinations written."""
+    destination = _resolve_destination()
     local_path: str | None = None
     s3_uri: str | None = None
-    try:
-        path = _append_local(record)
-        local_path = str(path)
-    except OSError:
-        logger.exception("Failed to write local audit log")
 
-    try:
+    if destination in ("s3", "both"):
         s3_uri = _put_s3(record)
-    except Exception:
-        logger.exception("Failed to write S3 audit log")
+        if destination == "s3" and not s3_uri:
+            logger.error(
+                "audit record not persisted (S3 write failed); run_id=%s",
+                record.get("run_id"),
+            )
+    elif destination == "local":
+        logger.warning(
+            "AUDIT_DESTINATION=local is deprecated; set AUDIT_S3_BUCKET for S3-only audit"
+        )
 
     return {"local_path": local_path, "s3_uri": s3_uri}
 

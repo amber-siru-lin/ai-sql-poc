@@ -1,0 +1,16 @@
+---
+description: Auto-fix localhost UI crashes (ErrorBoundary, undefined.length) without asking the user first
+alwaysApply: true
+---
+
+# Localhost UI error loop
+
+When the user reports the chat UI error page, blank panel, or **`Cannot read properties of undefined (reading 'length')`** on port 5173:
+
+1. Run `cd ui && npm run build` and fix TypeScript/prop-drill issues.
+2. Check the **`sessions`** chain: `App.tsx` → `AppShell` → `LeftSidebar` → `ChatHistoryList` (must pass `sessions`; list defaults `sessions = []`).
+3. Guard CopilotKit hooks: `messages?.length ?? 0`, `toStoredMessages()` before localStorage save.
+4. Restart Vite if needed; confirm API with `curl -s http://localhost:8000/api/status`.
+5. **Loop** until build passes and UI loads — do not stop at “check the browser console.”
+
+Full checklist: [AGENTS.md](../../AGENTS.md) · [chat-memory-and-session-learnings.md](../../docs/solutions/chat-memory-and-session-learnings.md)

@@ -1,0 +1,33 @@
+# Local Postgres for Phase 3.6 — LangGraph checkpoints (+ future sessions/messages tables).
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down
+# Logs:   docker compose logs -f postgres
+# Reset:  docker compose down -v   (deletes checkpoint data)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-sql-poc-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai_sql}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_sql_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_sql_poc}
+    volumes:
+      - ai_sql_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-ai_sql} -d ${POSTGRES_DB:-ai_sql_poc}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  ai_sql_pgdata:

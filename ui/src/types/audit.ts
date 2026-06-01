@@ -20,13 +20,10 @@ export type AuditLogEntry = {
   _meta?: { file: string; line: number };
 };
 
+import type { AuditConfig } from "../config";
+
 export type AuditLogsResponse = {
-  audit: {
-    s3_bucket: string | null;
-    s3_prefix: string;
-    local_dir: string;
-    enabled: boolean;
-  };
+  audit: AuditConfig;
   dates: string[];
   entries: AuditLogEntry[];
 };

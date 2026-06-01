@@ -202,6 +202,26 @@ See `ui/.env.example`.
 
 **Where queries/logs live:** [architecture/query-and-memory-storage.md](architecture/query-and-memory-storage.md) — nothing is persisted to a repo query log; Snowflake keeps warehouse history.
 
+#### Phase 3.6 — Durable memory (optional Postgres)
+
+LangGraph follow-ups survive API restart when Postgres is enabled.
+
+```bash
+# From repo root
+docker compose up -d
+# Add to repo-root .env:
+# DATABASE_URL=postgresql://ai_sql:ai_sql_dev@localhost:5432/ai_sql_poc
+
+scripts/py scripts/verify_postgres_setup.py
+# Restart API — first run creates checkpoint tables
+scripts/py -m uvicorn api.main:app --reload --port 8000
+curl -s http://localhost:8000/api/status | jq '.checkpoint'
+```
+
+Docs: [architecture/postgres-local-dev.md](architecture/postgres-local-dev.md) · [chat-memory-and-session-learnings.md](solutions/chat-memory-and-session-learnings.md)
+
+Without `DATABASE_URL`, behavior is unchanged (`MemorySaver` in RAM).
+
 #### Troubleshooting
 
 | Symptom | See |

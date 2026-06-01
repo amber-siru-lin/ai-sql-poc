@@ -197,9 +197,26 @@ We do **not** use the Python `copilotkit` SDK endpoint for chat in the MVP. That
 - **Agent steps** — Shown inline in chat (collapsible thinking, compact schema/Wren steps; full cards for SQL results). No separate timeline panel.
 - **Session (3.4)** — Right sidebar `SessionPanel`: clear conversation, thread id, memory explanation. See [query-and-memory-storage.md](../architecture/query-and-memory-storage.md).
 
+## Session switching (chat history)
+
+CopilotKit’s **premium** thread API (`useThreads`, server replay on `threadId` change) needs Copilot Cloud. This POC is **client-only** — we store transcripts in `localStorage` and rebuild from audit when needed.
+
+**Working pattern:**
+
+1. **`selectThread(id)`** — `flush()` saves the outgoing thread, then updates `threadId` (and `localStorage`).
+2. **`CopilotKit threadId={threadId}`** — keeps AG-UI runs aligned with the selected session.
+3. **`ChatPane`** — loads messages for **that** id only (`resolveThreadMessages`), then `reset()` + `setMessages()`.
+4. **Re-click** the active session in the sidebar — bumps `reloadNonce` to reload from storage/audit without changing id.
+
+**Don’t:** fight CopilotKit’s single global message store with partial remounts and `setMessages` races. **Do:** save-before-switch, then explicit load for the target thread.
+
+Full write-up: [chat-memory-and-session-learnings.md](./chat-memory-and-session-learnings.md)
+
+---
+
 ## Still TODO
 
-- Persisted query audit log and thread history list
+- Server-side sessions/messages API (Phase 3.6.2)
 - Optional: deploy `ui/` + `api/` when AWS path unblocks
 
 ---
@@ -211,6 +228,7 @@ We do **not** use the Python `copilotkit` SDK endpoint for chat in the MVP. That
 | `ui/src/App.tsx` | CopilotKit provider, HttpAgent, runtimeUrl |
 | `ui/src/config.ts` | `API_URL`, `COPILOT_RUNTIME_URL`, `AGENT_ID` |
 | `api/main.py` | AG-UI at `/`, CopilotKit stub at `/copilotkit` |
-| `src/agent_factory.py` | Shared graph + `MemorySaver` checkpointer |
+| `src/agent_factory.py` | Shared graph; API injects Postgres or Memory checkpointer |
+| `src/checkpoint_factory.py` | Postgres pool when `DATABASE_URL` is set |
 | `ui/README.md` | UI run instructions |
 | `api/README.md` | API endpoints |

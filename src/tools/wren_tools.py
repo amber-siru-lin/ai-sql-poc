@@ -82,6 +82,13 @@ def _run_wren(args: list[str]) -> str:
     err = (proc.stderr or "").strip()
     if proc.returncode != 0:
         return f"WREN ERROR (exit {proc.returncode}):\n{err or out}"
+    if args and args[0] == "dry-plan":
+        preview = out or "(no output)"
+        return (
+            "PREVIEW ONLY — do not pass this expanded SQL to wren_run_sql. "
+            "Use your original modeled SQL (customer, orders, nation) in wren_run_sql.\n\n"
+            f"{preview}"
+        )
     return out or "(no output)"
 
 

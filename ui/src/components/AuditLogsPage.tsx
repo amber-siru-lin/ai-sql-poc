@@ -83,9 +83,9 @@ export function AuditLogsPage({ filterThreadId }: Props) {
         <div>
           <h1 className="audit-page__title">Query audit log</h1>
           <p className="audit-page__subtitle">
-            Local JSONL
-            {data?.audit.local_dir ? ` · ${data.audit.local_dir}` : ""}
-            {data?.audit.s3_bucket ? ` · S3 ${data.audit.s3_bucket}` : ""}
+            {data?.audit.s3_bucket
+              ? `S3 · ${data.audit.s3_bucket}/${data.audit.s3_prefix}`
+              : "S3 audit bucket not configured"}
           </p>
         </div>
         <div className="audit-page__actions">
@@ -123,8 +123,8 @@ export function AuditLogsPage({ filterThreadId }: Props) {
 
       {!loading && !error && data && data.entries.length === 0 ? (
         <p className="audit-page__message">
-          No audit entries yet. Ask a question in chat — each run appends a line to{" "}
-          <code>logs/audit/</code>.
+          No audit entries yet. Ask a question in chat — each run writes one JSON
+          object to S3 when the bucket is configured.
         </p>
       ) : null}
 

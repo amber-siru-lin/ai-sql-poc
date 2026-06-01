@@ -1,10 +1,42 @@
-import type { AppView, SemanticLayerMode, SemanticLayerStatus } from "../config";
+import type {
+  AppView,
+  AuditConfig,
+  SemanticLayerMode,
+  SemanticLayerStatus,
+} from "../config";
+import type { AuditSession } from "../types/audit";
 import { ChatHistoryList } from "./ChatHistoryList";
 import { SemanticLayerToggle } from "./SemanticLayerToggle";
 import "./LeftSidebar.css";
 
+function auditConnectionLabel(audit: AuditConfig | null): {
+  text: string;
+  tone: "ok" | "warn";
+  title?: string;
+} {
+  if (!audit?.s3_bucket) {
+    return { text: "Audit log (S3) not configured", tone: "warn" };
+  }
+  if (audit.s3_status === "ok") {
+    return {
+      text: "Audit log (S3) connected",
+      tone: "ok",
+      title: audit.s3_message ?? undefined,
+    };
+  }
+  if (audit.s3_status === "error") {
+    return {
+      text: "Audit log (S3) unavailable",
+      tone: "warn",
+      title: audit.s3_message ?? "S3 write or read failed",
+    };
+  }
+  return { text: "Audit log (S3) checking…", tone: "warn" };
+}
+
 type Props = {
   apiStatus: string;
+  auditStatus: AuditConfig | null;
   semanticLayerMode: SemanticLayerMode;
   semanticStatus: SemanticLayerStatus | null;
   onSemanticLayerChange: (mode: SemanticLayerMode) => void;
@@ -13,14 +45,15 @@ type Props = {
   threadId: string;
   onSelectSession: (threadId: string) => void;
   onNewChat: () => void;
-  sessions: import("../types/audit").AuditSession[];
-  sessionsLoading: boolean;
-  sessionsError: string | null;
-  onSessionsRefresh: () => void;
+  sessions?: AuditSession[];
+  sessionsLoading?: boolean;
+  sessionsError?: string | null;
+  onSessionsRefresh?: () => void;
 };
 
 export function LeftSidebar({
   apiStatus,
+  auditStatus,
   semanticLayerMode,
   semanticStatus,
   onSemanticLayerChange,
@@ -29,12 +62,13 @@ export function LeftSidebar({
   threadId,
   onSelectSession,
   onNewChat,
-  sessions,
-  sessionsLoading,
-  sessionsError,
+  sessions = [],
+  sessionsLoading = false,
+  sessionsError = null,
   onSessionsRefresh,
 }: Props) {
   const apiOk = apiStatus === "connected";
+  const auditConn = auditConnectionLabel(auditStatus);
 
   return (
     <aside className="left-sidebar" aria-label="Workspace">
@@ -91,6 +125,13 @@ export function LeftSidebar({
             <span className="status-dot status-dot--ok" aria-hidden />
             Nova Pro · TPCH_SF1
           </li>
+          <li title={auditConn.title}>
+            <span
+              className={`status-dot status-dot--${auditConn.tone}`}
+              aria-hidden
+            />
+            {auditConn.text}
+          </li>
         </ul>
       </section>
 
@@ -100,6 +141,10 @@ export function LeftSidebar({
             activeThreadId={threadId}
             onSelectSession={onSelectSession}
             onNewChat={onNewChat}
+            sessions={sessions}
+            loading={sessionsLoading}
+            error={sessionsError}
+            onRefresh={onSessionsRefresh}
           />
         ) : (
           <>
