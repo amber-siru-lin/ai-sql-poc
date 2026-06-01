@@ -15,9 +15,12 @@ from src.check_setup import repo_root
 from src.semantic_editor.files import list_semantic_files, read_semantic_file, write_semantic_file
 from src.semantic_editor.paths import SemanticPathError
 from src.semantic_editor.validate import run_wren_validate
-from src.tools.snowflake_tools import FORBIDDEN, _connect, SNOWFLAKE_SCHEMA
 
 SCHEMA_PATH = repo_root() / "schema" / "tpch_sf1.md"
+FORBIDDEN = re.compile(
+    r"\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE)\b",
+    re.I,
+)
 LIMIT_PATTERN = re.compile(r"\blimit\s+(\d+)", re.I)
 
 
@@ -93,6 +96,8 @@ def editor_execute_snowflake_sql(
     _ = config
     if block := _enforce_limit_10(sql):
         return block
+    from src.tools.snowflake_tools import SNOWFLAKE_SCHEMA, _connect
+
     sql = sql.strip().rstrip(";")
     conn = _connect()
     try:
