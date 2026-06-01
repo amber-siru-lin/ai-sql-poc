@@ -2,7 +2,7 @@
 title: "Semantic layer editor (UI page + PR workflow + editor AI)"
 type: feat
 status: active
-implementation: planned
+implementation: in_progress
 date: 2026-06-01
 origin:
   - User request — third app view beside Chat and Audit logs
@@ -253,29 +253,30 @@ flowchart TB
 
 ## Implementation units
 
-### Unit 1: App shell + consumers (½ day)
+### Unit 1: App shell + consumers (½ day) — done (PR #5)
 
-- Extend `AppView` and nav.
-- `GET /api/semantic/consumers` static JSON + status merge.
-- `SemanticLayerPage` read-only consumers + links.
+- [x] Extend `AppView` and nav.
+- [x] `GET /api/semantic/consumers` static JSON + status merge.
+- [x] `SemanticLayerPage` read-only consumers + links.
 
 **Verify:** Navigate to Semantic layer; see Wren / Off / Cortex rows and `wren_ready` badge.
 
 ---
 
-### Unit 2: File read/write API + editor UI (1 day)
+### Unit 2: File read/write API + editor UI (1 day) — done
 
-- Allowlisted read/write endpoints.
-- CodeMirror (or textarea POC) with save.
-- Dirty-state warning on navigate away.
+- [x] Allowlisted read/write endpoints (`GET/PUT /api/semantic/file`, `GET /api/semantic/tree`).
+- [x] Textarea editor with save.
+- [x] Dirty-state warning on navigate away.
 
 **Verify:** Edit `relationships.yml`, save, `git diff` shows change on disk.
 
 ---
 
-### Unit 3: Validate + rebuild (½ day)
+### Unit 3: Validate (½ day) — done (rebuild deferred)
 
-- `POST /api/semantic/validate` and rebuild subprocess with timeout + streamed logs in UI.
+- [x] `POST /api/semantic/validate` with CLI output in UI.
+- [ ] `POST /api/semantic/rebuild` — deferred.
 
 **Verify:** Introduce intentional YAML error → validate fails with message; fix → passes.
 
