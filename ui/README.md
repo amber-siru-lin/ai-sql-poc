@@ -1,8 +1,8 @@
 # ui/ — CopilotKit chat UI (Phase 3B)
 
-React + **Vite** frontend with [CopilotKit](https://docs.copilotkit.ai) sidebar chat.
+React + **Vite** frontend with a Cursor-style layout: left controls, center chat, right context.
 
-Requires the Python API in `../api/` running on port **8000**.
+Requires the Python API in `../api/` on port **8000**.
 
 ## Run
 
@@ -19,9 +19,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 — chat panel on the right, placeholder panels on the left.
+Open http://localhost:5173/
 
-**Wren mode:** API `/api/status` must show `wren_ready: true`. From repo root: `scripts/py scripts/sync_wren_profile.py`, then `cd wren/tpch && wren context build`. Toggle **Semantics → Wren** in the header (chat remounts when you switch modes).
+**Wren mode:** API `/api/status` must show `wren_ready: true`. From repo root: `scripts/py scripts/sync_wren_profile.py`, then `cd wren/tpch && wren context build && wren memory index`. Toggle **Semantics → Wren** in the left sidebar (starts a new LangGraph thread when the mode changes).
 
 ## Config
 
@@ -34,18 +34,19 @@ VITE_COPILOT_RUNTIME_URL=http://localhost:8000/copilotkit
 
 **Troubleshooting:** [docs/solutions/copilotkit-local-ui-learnings.md](../docs/solutions/copilotkit-local-ui-learnings.md)
 
-## MVP vs upcoming
+## Feature status
 
 | Area | Status |
 |------|--------|
-| CopilotKit sidebar chat | MVP |
-| Deep Agent via AG-UI | MVP |
-| Tool cards: Snowflake SQL + Wren run/dry-plan/memory | MVP |
-| SQL preview panel | Placeholder |
-| Results table panel | Placeholder |
-| Agent steps / verbose tools | Placeholder (Phase 3.3) |
-| Session reset UI | Placeholder (Phase 3.4) |
+| Three-column layout + dark theme | Done |
+| CopilotKit chat → Deep Agent (AG-UI) | Done |
+| Tool cards in chat (Snowflake, Wren, schema) | Done |
+| Collapsible thinking + compact intermediate steps | Done |
+| Session panel (clear chat, memory explanation) | Done (Phase 3.4) |
+| SQL preview / results side panels | Removed (results live in chat) |
+| Query audit log viewer | Left sidebar → **Audit logs** — see [audit-logs/README.md](../docs/audit-logs/README.md) |
+| Chat history list (left sidebar) | Done — grouped from audit log + local message cache |
 
 Plan: [docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md](../docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md)
 
-Learnings (errors + fixes): [docs/solutions/copilotkit-local-ui-learnings.md](../docs/solutions/copilotkit-local-ui-learnings.md)
+**Where queries & memory are stored:** [docs/architecture/query-and-memory-storage.md](../docs/architecture/query-and-memory-storage.md)

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -12,6 +14,8 @@ if str(ROOT) not in sys.path:
 
 from src.agent_factory import build_agent_graph
 from src.agent_streaming import stream_agent
+from src.audit_extract import extract_sql_executions, last_user_question
+from src.audit_logger import build_audit_record, write_audit_record
 from src.check_setup import check_all
 from src.semantic_layer.retry_policy import GRAPH_RECURSION_LIMIT
 from src.semantic_layer.types import SEMANTIC_LAYER_MODES, SemanticLayerMode, normalize_semantic_layer
@@ -35,12 +39,44 @@ def ask(
         "recursion_limit": GRAPH_RECURSION_LIMIT,
     }
 
-    if verbose:
-        return stream_agent(agent, messages, config=run_config)
+    run_id = str(uuid.uuid4())
+    thread_id = run_config["configurable"]["thread_id"]
+    started = time.perf_counter()
+    status = "ok"
+    error: str | None = None
+    answer = ""
+    updated: list = list(messages)
+    try:
+        if verbose:
+            answer, updated = stream_agent(agent, messages, config=run_config)
+        else:
+            result = agent.invoke({"messages": messages}, config=run_config)
+            updated = list(result["messages"])
+            answer = updated[-1].content
+    except Exception as exc:
+        status = "error"
+        error = str(exc)
+        raise
+    finally:
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        try:
+            msgs = updated if status == "ok" else messages
+            record = build_audit_record(
+                thread_id=thread_id,
+                run_id=run_id,
+                semantic_layer=semantic_layer,
+                question=last_user_question(msgs) or question,
+                sql_executions=extract_sql_executions(msgs),
+                status=status,
+                duration_ms=duration_ms,
+                error=error,
+                source="cli",
+            )
+            write_audit_record(record)
+        except Exception:
+            pass
 
-    result = agent.invoke({"messages": messages}, config=run_config)
-    updated = list(result["messages"])
-    return updated[-1].content, updated
+    return answer, updated
 
 
 def main() -> None:

@@ -2,11 +2,15 @@ import { HttpAgent } from "@ag-ui/client";
 
 import { AGENT_ID, API_URL, type SemanticLayerMode } from "../config";
 
-/** Inject semantic layer mode into each AG-UI run via ``forwardedProps``. */
-export function createSemanticHttpAgent(semanticLayer: SemanticLayerMode): HttpAgent {
+/** Inject semantic layer + LangGraph thread into each AG-UI run. */
+export function createSemanticHttpAgent(
+  semanticLayer: SemanticLayerMode,
+  threadId: string,
+): HttpAgent {
   return new HttpAgent({
     url: API_URL,
     agentId: AGENT_ID,
+    threadId,
     fetch: async (url, requestInit) => {
       let init: RequestInit = requestInit ?? {};
       if (init.body && typeof init.body === "string") {

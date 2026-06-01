@@ -10,6 +10,25 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+
+def _load_dotenv() -> None:
+    """Load ROOT/.env into os.environ (does not override existing vars)."""
+    env_file = ROOT / ".env"
+    if not env_file.is_file():
+        return
+    for raw in env_file.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
+
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +36,8 @@ from pydantic import BaseModel
 
 from src.ag_ui_agent import SemanticLayerLangGraphAgent
 from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
+from src.audit_logger import audit_config
+from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.check_setup import check_all
 from src.semantic_layer.types import SEMANTIC_LAYER_MODES, DEFAULT_SEMANTIC_LAYER
 from src.tools.cortex_tools import cortex_ready
@@ -57,6 +78,29 @@ def _semantic_layer_status() -> dict:
     }
 
 
+@app.get("/api/audit/logs")
+def audit_logs(
+    date: str | None = None,
+    limit: int = 50,
+    thread_id: str | None = None,
+):
+    """List query audit records from local JSONL (newest first)."""
+    return {
+        "audit": audit_config(),
+        "dates": list_audit_dates(),
+        "entries": read_audit_entries(date=date, limit=limit, thread_id=thread_id),
+    }
+
+
+@app.get("/api/audit/sessions")
+def audit_sessions(limit: int = 30):
+    """List chat sessions grouped by thread_id (from audit log)."""
+    return {
+        "audit": audit_config(),
+        "sessions": list_audit_sessions(limit=limit),
+    }
+
+
 @app.get("/api/status")
 def status():
     """Lightweight status for the UI header (does not invoke the agent)."""
@@ -65,6 +109,7 @@ def status():
         "agent": AGENT_NAME,
         "dataset": "TPCH_SF1",
         "semantic_layer": _semantic_layer_status(),
+        "audit": audit_config(),
     }
 
 

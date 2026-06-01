@@ -54,7 +54,16 @@ def classify_sql_error(message: str) -> tuple[str, bool]:
             return code, False
     if message.startswith("ERROR:") and "disabled" in message.lower():
         return "disabled_tool", False
-    if "compilation error" in message.lower() or "invalid identifier" in message.lower():
+    lower = message.lower()
+    if "use_mdl_models" in lower:
+        return "use_mdl_models", True
+    if (
+        "does not exist" in lower
+        or "not authorized" in lower
+        or "object '" in lower
+    ) and ("tpch_sf1" in lower or "snowflake_sample_data" in lower):
+        return "tpch_object_missing", True
+    if "compilation error" in lower or "invalid identifier" in lower:
         return "sql_compilation", True
     if "SNOWFLAKE ERROR" in message or "WREN ERROR" in message:
         return "execution", True

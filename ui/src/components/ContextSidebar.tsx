@@ -1,7 +1,7 @@
 import { useCopilotChatHeadless_c } from "@copilotkit/react-core";
 
 import { SAMPLE_QUESTIONS, type SemanticLayerMode } from "../config";
-import { PlaceholderPanel } from "./PlaceholderPanel";
+import { SessionPanel } from "./SessionPanel";
 import "./ContextSidebar.css";
 
 const MODE_HINT: Record<SemanticLayerMode, string> = {
@@ -12,9 +12,17 @@ const MODE_HINT: Record<SemanticLayerMode, string> = {
 
 type Props = {
   semanticLayerMode: SemanticLayerMode;
+  threadId: string;
+  onThreadIdChange: (nextId: string) => void;
+  onOpenAuditForThread?: () => void;
 };
 
-export function ContextSidebar({ semanticLayerMode }: Props) {
+export function ContextSidebar({
+  semanticLayerMode,
+  threadId,
+  onThreadIdChange,
+  onOpenAuditForThread,
+}: Props) {
   const { sendMessage, isLoading } = useCopilotChatHeadless_c();
 
   const ask = (question: string) => {
@@ -57,27 +65,12 @@ export function ContextSidebar({ semanticLayerMode }: Props) {
         </p>
       </section>
 
-      <section className="context-sidebar__section context-sidebar__cards">
-        <h2 className="context-sidebar__section-title">Workspace panels</h2>
-        <PlaceholderPanel
-          title="SQL preview"
-          badge="Phase 3.2"
-          hint="Final SELECT from the agent will render here with syntax highlighting."
-        />
-        <PlaceholderPanel
-          title="Results & charts"
-          badge="In chat"
-          hint="Tables and bar charts also appear inline in the chat when results are chartable."
-        />
-        <PlaceholderPanel
-          title="Agent steps"
-          badge="Phase 3.3"
-          hint="Tool call timeline (schema lookup, SQL, retries)."
-        />
-        <PlaceholderPanel
-          title="Session context"
-          badge="Phase 3.4"
-          hint="Follow-up memory controls and conversation reset."
+      <section className="context-sidebar__section">
+        <SessionPanel
+          semanticLayerMode={semanticLayerMode}
+          threadId={threadId}
+          onThreadIdChange={onThreadIdChange}
+          onViewAuditLogs={onOpenAuditForThread}
         />
       </section>
     </aside>

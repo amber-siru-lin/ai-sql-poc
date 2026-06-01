@@ -12,6 +12,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg
 
 from src.check_setup import repo_root
+from src.tools.wren_sql_guard import wren_modeled_sql_violation
 from src.semantic_layer.retry_policy import (
     check_sql_attempt_allowed,
     register_sql_failure,
@@ -50,6 +51,17 @@ def _require_wren_mode(config: RunnableConfig | None) -> str | None:
     return None
 
 
+def _guard_modeled_sql(
+    config: RunnableConfig | None,
+    sql: str,
+    *,
+    tool_name: str,
+) -> str | None:
+    if violation := wren_modeled_sql_violation(sql):
+        return register_sql_failure(config, violation, tool_name=tool_name)
+    return None
+
+
 def _run_wren(args: list[str]) -> str:
     try:
         proc = subprocess.run(
@@ -81,6 +93,8 @@ def wren_dry_plan(
     """Preview SQL expanded through the Wren MDL semantic layer without executing."""
     if block := _require_wren_mode(config):
         return block
+    if block := _guard_modeled_sql(config, sql, tool_name="wren_dry_plan"):
+        return block
     return _run_wren(["dry-plan", "--sql", sql.strip()])
 
 
@@ -93,6 +107,8 @@ def wren_run_sql(
     if block := _require_wren_mode(config):
         return block
     if block := check_sql_attempt_allowed(config, tool_name="wren_run_sql"):
+        return block
+    if block := _guard_modeled_sql(config, sql, tool_name="wren_run_sql"):
         return block
     result = _run_wren(["--sql", sql.strip(), "-o", "json"])
     if "WREN ERROR" in result or result.startswith("ERROR"):

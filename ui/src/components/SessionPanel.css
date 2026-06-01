@@ -1,0 +1,141 @@
+.session-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.session-panel__title {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.session-panel__subtitle {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0.35rem 0 0;
+  text-transform: uppercase;
+}
+
+.session-panel__meta {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.session-panel__meta div {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.session-panel__meta dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.session-panel__meta dd {
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.session-panel__meta code {
+  font-size: 0.72rem;
+}
+
+.session-panel__clear {
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.65rem;
+  width: 100%;
+}
+
+.session-panel__clear:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.session-panel__clear:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.session-panel__cleared {
+  background: var(--accent-soft);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+}
+
+.session-panel__memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.session-panel__memory-list li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.session-panel__memory-list strong {
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.session-panel__memory-list span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.session-panel__audit-link {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  width: 100%;
+}
+
+.session-panel__audit-link:hover {
+  background: var(--accent-soft);
+}
+
+.session-panel__footnote {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.session-panel__footnote code {
+  font-size: 0.65rem;
+}

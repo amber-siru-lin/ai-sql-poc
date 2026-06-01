@@ -31,9 +31,8 @@ export function SqlToolResultCard({
     return (
       <div
         className={`sql-tool-card sql-tool-card--loading${isWren ? " sql-tool-card--wren" : " sql-tool-card--snowflake"}`}
+        role="status"
       >
-        <ToolCardHeader title={title} status={status} snowflake={!isWren} />
-        {sql ? <pre className="sql-tool-card__sql">{sql}</pre> : null}
         <span className="sql-tool-card__status-text">{loadingMessage}</span>
       </div>
     );
@@ -66,7 +65,9 @@ export function SqlToolResultCard({
   const chart = parsed ? buildChartSeries(parsed) : null;
 
   return (
-    <div className={`sql-tool-card${isWren ? " sql-tool-card--wren" : " sql-tool-card--snowflake"}`}>
+    <div
+      className={`sql-tool-card sql-tool-card--result${isWren ? " sql-tool-card--wren" : " sql-tool-card--snowflake"}`}
+    >
       <ToolCardHeader title={title} status={status} snowflake={!isWren} />
       {sql ? <pre className="sql-tool-card__sql">{sql}</pre> : null}
       {parsed ? <ResultsTable result={parsed} /> : null}

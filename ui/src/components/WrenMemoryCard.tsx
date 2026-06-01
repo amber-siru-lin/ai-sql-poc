@@ -1,5 +1,7 @@
+import { CollapsibleStep, InlineAgentStep } from "./CollapsibleStep";
 import { isWrenToolError } from "../utils/parseWrenToolResult";
 import "./SqlToolResultCard.css";
+import "./AgentStep.css";
 
 type Props = {
   question?: string;
@@ -13,13 +15,7 @@ export function WrenMemoryCard({ question, memoryText, status }: Props) {
   const loading = !String(status).toLowerCase().includes("complete");
 
   if (loading) {
-    return (
-      <div className="sql-tool-card sql-tool-card--loading sql-tool-card--wren">
-        <ToolCardHeader title="Wren · memory" status={status} />
-        {question ? <p className="sql-tool-card__question">{question}</p> : null}
-        <span className="sql-tool-card__status-text">Fetching MDL context…</span>
-      </div>
-    );
+    return <InlineAgentStep label="Wren · fetching MDL context…" />;
   }
 
   const text = memoryText ?? "";
@@ -42,18 +38,23 @@ export function WrenMemoryCard({ question, memoryText, status }: Props) {
     );
   }
 
-  const truncated = text.length > MEMORY_PREVIEW_CHARS;
-  const preview = truncated ? `${text.slice(0, MEMORY_PREVIEW_CHARS)}…` : text;
+  const linePreview = text.replace(/\s+/g, " ").slice(0, 72);
+  const body =
+    text.length > MEMORY_PREVIEW_CHARS
+      ? `${text.slice(0, MEMORY_PREVIEW_CHARS)}…`
+      : text;
 
   return (
-    <div className="sql-tool-card sql-tool-card--wren">
-      <ToolCardHeader title="Wren · memory" status={status} />
+    <CollapsibleStep
+      title="Wren · memory"
+      preview={question ?? (linePreview ? `${linePreview}…` : "MDL context")}
+    >
       {question ? <p className="sql-tool-card__question">{question}</p> : null}
-      <pre className="sql-tool-card__raw">{preview}</pre>
-      {truncated ? (
+      <pre>{body}</pre>
+      {text.length > MEMORY_PREVIEW_CHARS ? (
         <p className="sql-tool-card__hint">Showing first {MEMORY_PREVIEW_CHARS} characters.</p>
       ) : null}
-    </div>
+    </CollapsibleStep>
   );
 }
 

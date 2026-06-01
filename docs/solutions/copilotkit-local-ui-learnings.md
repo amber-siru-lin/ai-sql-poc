@@ -191,11 +191,15 @@ We do **not** use the Python `copilotkit` SDK endpoint for chat in the MVP. That
 
 ---
 
-## Still TODO (Phase 3.3+)
+## Phase 3.3 / 3.4 (UI)
 
-- Wire `useRenderToolCall` for `execute_snowflake_sql` / `get_schema_summary`
-- Replace placeholder panels (SQL preview, results table, agent steps)
-- Session reset UI
+- **Tool cards** — `ui/src/components/CopilotToolRenderers.tsx` (`useRenderToolCall` for Snowflake + Wren tools).
+- **Agent steps** — Shown inline in chat (collapsible thinking, compact schema/Wren steps; full cards for SQL results). No separate timeline panel.
+- **Session (3.4)** — Right sidebar `SessionPanel`: clear conversation, thread id, memory explanation. See [query-and-memory-storage.md](../architecture/query-and-memory-storage.md).
+
+## Still TODO
+
+- Persisted query audit log and thread history list
 - Optional: deploy `ui/` + `api/` when AWS path unblocks
 
 ---

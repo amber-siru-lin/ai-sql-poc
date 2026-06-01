@@ -23,6 +23,8 @@ wren/profiles.local.yml
 config/working_model.txt
 working_model.txt
 .local/
+logs/
+data/
 
 # --- Python ---
 __pycache__/

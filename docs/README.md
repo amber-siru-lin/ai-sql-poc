@@ -42,3 +42,5 @@
 | [wren-vs-snowflake-cortex-analyst.md](architecture/wren-vs-snowflake-cortex-analyst.md) | Wren vs Cortex Analyst deep dive |
 | [agent-error-handling.md](architecture/agent-error-handling.md) | SQL retry limits, error tags, where policy lives |
 | [cta-ai-architecture.html](architecture/cta-ai-architecture.html) | Interactive 8-layer diagram — open in a browser |
+| [query-and-memory-storage.md](architecture/query-and-memory-storage.md) | **Where memory & query logs live** (POC vs CTA target) |
+| [audit-logs/README.md](audit-logs/README.md) | **Query audit log** — S3 bucket, env vars, restart API, inspect records |

@@ -103,7 +103,27 @@
 }
 
 .sql-tool-card--loading {
+  background: transparent;
+  border: none;
   color: var(--muted);
+  font-size: 0.76rem;
+  padding: 0.2rem 0;
+}
+
+.sql-tool-card--loading .sql-tool-card__status-text {
+  font-size: 0.76rem;
+}
+
+.sql-tool-card--loading .sql-tool-card__status-text::before {
+  animation: agent-step-pulse 1.2s ease-in-out infinite;
+  background: var(--accent);
+  border-radius: 50%;
+  content: "";
+  display: inline-block;
+  height: 6px;
+  margin-right: 0.45rem;
+  vertical-align: middle;
+  width: 6px;
 }
 
 .sql-tool-card--error {

@@ -1,8 +1,10 @@
 import { useRenderToolCall } from "@copilotkit/react-core";
 
+import { CollapsibleStep, InlineAgentStep } from "./CollapsibleStep";
 import { SqlToolResultCard } from "./SqlToolResultCard";
 import { WrenDryPlanCard } from "./WrenDryPlanCard";
 import { WrenMemoryCard } from "./WrenMemoryCard";
+import "./AgentStep.css";
 
 function toolArgString(args: unknown, key: string): string | undefined {
   if (!args || typeof args !== "object" || !(key in args)) return undefined;
@@ -68,26 +70,15 @@ export function CopilotToolRenderers() {
     render: ({ status, result }) => {
       const loading = !String(status).toLowerCase().includes("complete");
       if (loading) {
-        return (
-          <div className="sql-tool-card sql-tool-card--loading sql-tool-card--snowflake">
-            <span className="sql-tool-card__badge sql-tool-card__badge--snowflake">
-              Snowflake · schema
-            </span>
-            <span className="sql-tool-card__status-text">Loading schema…</span>
-          </div>
-        );
+        return <InlineAgentStep label="Looking up schema…" />;
       }
       const text = toolResultString(result) ?? "";
+      const preview =
+        text.length > 64 ? `${text.replace(/\s+/g, " ").slice(0, 64)}…` : text;
       return (
-        <div className="sql-tool-card sql-tool-card--snowflake">
-          <span className="sql-tool-card__badge sql-tool-card__badge--snowflake">
-            Snowflake · schema
-          </span>
-          <pre className="sql-tool-card__raw">
-            {text.slice(0, 1200)}
-            {text.length > 1200 ? "…" : ""}
-          </pre>
-        </div>
+        <CollapsibleStep title="Schema lookup" preview={preview || "Tables & columns"}>
+          <pre>{text.slice(0, 4000)}{text.length > 4000 ? "…" : ""}</pre>
+        </CollapsibleStep>
       );
     },
   });
