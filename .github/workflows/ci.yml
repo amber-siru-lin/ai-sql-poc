@@ -13,6 +13,22 @@ jobs:
   python-tests:
     name: python-tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ai_sql
+          POSTGRES_PASSWORD: ai_sql_dev
+          POSTGRES_DB: ai_sql_poc
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ai_sql -d ai_sql_poc"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://ai_sql:ai_sql_dev@localhost:5432/ai_sql_poc
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

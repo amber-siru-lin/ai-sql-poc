@@ -29,6 +29,11 @@ import { useEditorSessions } from "./hooks/useEditorSessions";
 import { useSemanticLayerMode } from "./hooks/useSemanticLayerMode";
 import { createEditorHttpAgent, type EditorAgentContext } from "./lib/editorHttpAgent";
 import { createSemanticHttpAgent } from "./lib/httpAgent";
+import {
+  backfillLocalSnapshotsToApi,
+  createSessionOnApi,
+  setSessionsAvailableFromStatus,
+} from "./lib/sessionApi";
 
 const CHAT_INSTRUCTIONS = `You are helping a business user explore the Snowflake TPCH_SF1 dataset.
 Use the active semantic layer mode (Off, Wren, or Cortex) as described in your system prompt.
@@ -105,8 +110,13 @@ export default function App() {
   }, []);
 
   const onNewChat = useCallback(() => {
-    selectThread(crypto.randomUUID());
-  }, [selectThread]);
+    const nextId = crypto.randomUUID();
+    void createSessionOnApi(nextId, {
+      title: "New chat",
+      semanticLayer: semanticLayerMode,
+    });
+    selectThread(nextId);
+  }, [selectThread, semanticLayerMode]);
 
   const selectEditorThread = useCallback(
     (nextId: string) => {
@@ -149,6 +159,10 @@ export default function App() {
         setSemanticStatus(data.semantic_layer);
         setAuditStatus(data.audit ?? null);
         setPostgresStatus(data.postgres ?? null);
+        setSessionsAvailableFromStatus(data.sessions ?? null);
+        if (data.sessions?.available) {
+          void backfillLocalSnapshotsToApi();
+        }
       })
       .catch(() => {
         setApiStatus(`offline — start the API (${API_URL})`);

@@ -1,6 +1,7 @@
 ---
 title: Chat memory and session switching — learnings
 date: 2026-06-01
+last_updated: 2026-06-01
 category: frontend-integration
 tags:
   - copilotkit
@@ -9,6 +10,8 @@ tags:
   - memory
   - postgres
   - phase-3
+  - session-history
+  - localstorage
 status: active
 ---
 
@@ -51,9 +54,9 @@ We are **self-hosted** with `HttpAgent` → AG-UI → FastAPI. There is no Copil
 
 ---
 
-## Session switching — working pattern (Jun 2026)
+## Session switching — working pattern (PR #11, Jun 2026)
 
-After several failed attempts (bootstrap/restore races, remounting `CopilotKit` on every thread change, clearing messages before save), this pattern works:
+After several failed attempts (bootstrap/restore races, remounting `CopilotKit` on every thread change, clearing messages before save, **`CopilotKit threadId` wiping the store**, multiple hooks each calling `connectAgent`), this pattern works:
 
 ```mermaid
 sequenceDiagram
@@ -62,26 +65,32 @@ sequenceDiagram
   participant Flush as ActiveThreadFlushBridge
   participant LS as localStorage
   participant Pane as ChatPane
-  participant CK as CopilotKit
+  participant Agent as useSqlAgent
 
   User->>App: Click session B in sidebar
   App->>Flush: flush() — save session A
   Flush->>LS: ai-sql-poc-chat-snapshots[A]
   App->>App: setThreadId(B), localStorage thread id
-  Pane->>LS: load B (or audit fallback)
-  Pane->>CK: reset() + setMessages(B)
-  User->>CK: Next message uses threadId B
+  Pane->>LS: resolveThreadMessages(B)
+  Pane->>Agent: agent.setMessages(B)
+  Note over Pane,Agent: Re-apply at t+0 / t+120ms if connectAgent cleared
+  User->>Agent: Next run uses threadId B via HttpAgent fetch hook
 ```
 
 | Step | Code | Why |
 |------|------|-----|
 | 1 | `selectThread(id)` calls `flush()` **before** `setThreadId` | Outgoing thread must be saved while messages still exist |
-| 2 | `CopilotKit threadId={threadId}` | Aligns AG-UI / LangGraph `configurable.thread_id` |
-| 3 | `ChatPane` loads **only that id** via `resolveThreadMessages` | localStorage first, then `GET /api/audit/logs?thread_id=` |
-| 4 | `reset()` then `setMessages(loaded)` | CopilotKit has one global message store — explicit apply |
-| 5 | Re-click active session → `reloadNonce++` | User can force reload without changing id |
+| 2 | **Do not** pass `threadId` to `<CopilotKit>` | CopilotKit reconnects the agent and calls `setMessages([])` on thread change |
+| 3 | `HttpAgent` injects `threadId` per request via `threadIdRef` | LangGraph still gets the correct `configurable.thread_id` without remounting CopilotKit |
+| 4 | Single `useSqlAgent()` → `useAgent({ agentId })` | Multiple `useCopilotChatHeadless` / internal hooks each trigger `connectAgent` and clear messages |
+| 5 | `ChatPane` loads via `resolveThreadMessages` | localStorage first; audit fallback when snapshot missing or shorter |
+| 6 | `agent.setMessages(loaded)` + `copilotOwnerThreadIdRef` | One global message store — explicit apply; ref gates autosave to the owning thread |
+| 7 | Re-apply at 0 ms and 120 ms if count drops | `CopilotChat`’s internal `connectAgent` clears messages once on mount |
+| 8 | Keep `<CopilotChat>` mounted during load (overlay) | Unmounting triggers another connect/clear cycle |
+| 9 | Re-click active session → `reloadNonce++` | User can force reload without changing id |
+| 10 | **+ New** starts a fresh UUID (no Clear button) | Avoids accidental wipe; old checkpoints remain on server |
 
-**Key files:** `ui/src/App.tsx`, `ui/src/components/ChatPane.tsx`, `ui/src/components/ActiveThreadFlushBridge.tsx`, `ui/src/hooks/useActiveThreadPersistence.ts`, `ui/src/lib/resolveThreadMessages.ts`
+**Key files:** `ui/src/App.tsx`, `ui/src/components/ChatPane.tsx`, `ui/src/components/ActiveThreadFlushBridge.tsx`, `ui/src/hooks/useActiveThreadPersistence.ts`, `ui/src/hooks/useSqlAgent.ts`, `ui/src/lib/resolveThreadMessages.ts`, `ui/src/lib/httpAgent.ts`
 
 ---
 
@@ -89,33 +98,65 @@ sequenceDiagram
 
 ### 1. Single global CopilotKit message store
 
-`useCopilotChatHeadless_c()` is shared under one `<CopilotKit>` provider. `key={threadId}` on `CopilotChat` remounts the **UI**, not the underlying message context. Partial remounts + async `setMessages` caused blank or stale panels.
+`useAgent` / CopilotKit share one message list under `<CopilotKit>`. `key={threadId}` on `CopilotChat` remounts the **UI**, not the underlying agent context. Partial remounts + async `setMessages` caused blank or stale panels.
 
-**Fix:** Save-before-switch + explicit load for the target thread. One code path, not three components fighting the same store.
+**Fix:** Save-before-switch + explicit load for the target thread. One agent hook (`useSqlAgent`), not three components each calling headless chat APIs.
 
-### 2. Clearing before save
+### 2. `connectAgent` clears messages on mount
+
+`CopilotChat` internally calls `connectAgent`, which runs `setMessages([])` once when the chat UI mounts — **after** `ChatPane` may have already restored history.
+
+**Fix:** After `agent.setMessages(loaded)`, schedule re-apply at 0 ms and 120 ms when `agent.messages.length < loaded.length` and `copilotOwnerThreadIdRef` still matches. Keep `CopilotChat` mounted (loading overlay only).
+
+### 3. `CopilotKit threadId` prop (removed)
+
+Passing `threadId={threadId}` to `<CopilotKit>` looked correct for LangGraph alignment but caused CopilotKit to reconnect and wipe messages on every session click.
+
+**Fix:** Remove `threadId` from `<CopilotKit>`. Pass thread id only through `HttpAgent`’s fetch hook (`body.threadId = threadIdRef.current`) so server runs stay scoped without client-side reconnect.
+
+### 4. Multiple agent hooks = multiple clears
+
+`useCopilotChatHeadless`, `useActiveThreadPersistence`, and `ChatPane` each subscribed to the agent separately. Each subscription path could trigger `connectAgent` and race to clear messages.
+
+**Fix:** Centralize on `useSqlAgent()` — thin wrapper around `useAgent({ agentId, updates })`. Components that need message watches pass `watchMessages: true`.
+
+### 5. Autosave on the wrong thread
+
+Debounced save in `useActiveThreadPersistence` used to fire when `threadId` changed, sometimes persisting an **empty** or **incoming** thread’s store over the outgoing session.
+
+**Fix:** Only autosave when `threadId === copilotOwnerThreadIdRef.current`. Set the ref in `applyThreadMessages` after a successful restore. Never autosave on `threadId` change alone — rely on explicit `flush()` in `selectThread`.
+
+### 6. Clearing before save
 
 Switching `threadId` unmounted chat and cleared messages **before** the outgoing thread was persisted → empty snapshots overwrote good data.
 
-**Fix:** `useLayoutEffect` / synchronous `flush()` in `selectThread` before state update.
+**Fix:** Synchronous `flush()` in `selectThread` before `setThreadId`.
 
-### 3. Stale boot state
+### 7. Stale boot state
 
 Rendering `CopilotChat` with new `threadId` but old loaded messages showed the wrong conversation briefly.
 
 **Fix:** Show “Loading conversation…” until `resolveThreadMessages(threadId)` completes for **that** id.
 
-### 4. Audit ≠ transcript
+### 8. Audit ≠ transcript
 
 Audit stores one JSON per **run** (`question`, SQL steps, timing). It does not store full assistant prose or tool UI state. Audit fallback restore is Q&A-shaped, not pixel-perfect chat.
 
-### 5. Sidebar vs active thread on refresh
+**Fix:** `resolveThreadMessages` picks whichever source is **richer** (more messages): local snapshot vs audit rebuild.
+
+### 9. Sidebar vs active thread on refresh
 
 `localStorage` key `ai-sql-poc-thread-id` holds the **last selected** thread, not “latest in sidebar.” Sidebar is sorted by audit `last_timestamp`; active thread is whatever you last clicked (if flush + save worked).
 
-### 6. Server follow-up vs UI restore
+### 10. Server follow-up vs UI restore
 
 After API restart with `MemorySaver`, the UI can show old messages (localStorage/audit) while LangGraph has **no** checkpoint — follow-ups fail silently. **Postgres checkpointer** fixes server-side persistence; UI still needs its own transcript store for rich replay (Phase 3.6.2).
+
+### 11. Sync `PostgresSaver` breaks AG-UI chat
+
+Using the sync `PostgresSaver` with the async FastAPI / AG-UI path caused `NotImplementedError` on chat runs — messages sent but no assistant response.
+
+**Fix:** `AsyncPostgresSaver` + `AsyncConnectionPool` with `await conn.set_autocommit(True)` in `src/checkpoint_factory.py`; async `startup`/`shutdown` in `api/main.py`.
 
 ---
 
@@ -126,13 +167,17 @@ After API restart with `MemorySaver`, the UI can show old messages (localStorage
 | Component | Role |
 |-----------|------|
 | `docker-compose.yml` | Postgres 16 on `localhost:5432` |
-| `DATABASE_URL` in `.env` | Enables `PostgresSaver` instead of `MemorySaver` |
-| `src/checkpoint_factory.py` | Pool + `setup()` on API startup |
+| `DATABASE_URL` in `.env` | Enables `AsyncPostgresSaver` instead of `MemorySaver` |
+| `src/checkpoint_factory.py` | Async pool + `await setup()` on API startup |
 | `GET /api/status` → `checkpoint.backend` | `memory` or `postgres` |
 
 CLI (`src/ask_deep_agent.py`) still uses in-memory checkpoints — only the API opts into Postgres when `DATABASE_URL` is set.
 
+**Local dev without Docker:** Leave `DATABASE_URL` empty (or unset). API falls back to `MemorySaver`; UI session restore still works via localStorage/audit.
+
 **Not done yet (3.6.2+):** `conversations` / `messages` tables, server-side session list, UI loading from API instead of localStorage-first.
+
+**Not done yet (Phase 2):** Per-thread message store in React context so background agent runs continue while the user switches to another session in the sidebar.
 
 ---
 
@@ -152,10 +197,13 @@ See [Phase 3.6 in the CopilotKit plan](../plans/2026-05-29-004-feat-copilotkit-l
 
 | Symptom | Likely cause | Check |
 |---------|--------------|-------|
-| Blank middle panel on session click | Save/load race (old bug) or no snapshot/audit for that thread | Re-click session; DevTools → `ai-sql-poc-chat-snapshots` |
+| Blank middle panel on session click | `connectAgent` cleared after restore, or save/load race | Re-click session (`reloadNonce`); confirm `useSqlAgent` is the only agent hook |
+| Chat sends but no assistant reply | Sync checkpointer or Postgres pool timeout | `/api/status` → `checkpoint.backend`; API logs for `NotImplementedError`; Docker up if `DATABASE_URL` set |
+| Messages flash then disappear | `CopilotKit threadId` or duplicate headless hooks | Ensure `<CopilotKit>` has **no** `threadId` prop; grep for extra `useCopilotChat` |
 | Wrong session after refresh | `ai-sql-poc-thread-id` not updated on last click | Application → localStorage |
 | Messages visible, follow-up ignores context | API restarted with MemorySaver | Set `DATABASE_URL`, restart API; `/api/status` → `checkpoint.backend: postgres` |
 | Session in sidebar but empty chat | No localStorage + audit has no rows for that `thread_id` | Audit logs page filtered by thread |
+| Outgoing session saved empty | `flush()` not called before switch, or autosave on wrong thread | Breakpoint in `selectThread` → `flushActiveThreadRef.current()` |
 | Tool cards missing after restore | Snapshots store text only | Expected until server messages API exists |
 
 ---
@@ -164,10 +212,15 @@ See [Phase 3.6 in the CopilotKit plan](../plans/2026-05-29-004-feat-copilotkit-l
 
 | Path | Role |
 |------|------|
-| `ui/src/App.tsx` | `selectThread`, `CopilotKit threadId`, `reloadNonce` |
-| `ui/src/lib/chatPersistence.ts` | localStorage snapshots |
-| `ui/src/lib/resolveThreadMessages.ts` | local → audit load |
+| `ui/src/App.tsx` | `selectThread`, `flush` wiring, stable `HttpAgent`, **no** `CopilotKit threadId` |
+| `ui/src/hooks/useSqlAgent.ts` | Single shared `useAgent` handle |
+| `ui/src/lib/httpAgent.ts` | Injects `threadId` + semantic layer per AG-UI request |
+| `ui/src/lib/chatPersistence.ts` | localStorage snapshots (`ai-sql-poc-chat-snapshots`) |
+| `ui/src/lib/resolveThreadMessages.ts` | Merge local + audit (richer wins) |
+| `ui/src/components/ChatPane.tsx` | Load, apply, re-apply after `connectAgent` clear |
 | `src/agent_factory.py` | Graph + checkpointer injection |
-| `src/checkpoint_factory.py` | Postgres pool lifecycle |
-| `api/main.py` | Startup init, `/api/status` checkpoint field |
+| `src/checkpoint_factory.py` | Async Postgres pool lifecycle |
+| `api/main.py` | Async startup init, `/api/status` checkpoint field |
 | `docker-compose.yml` | Local Postgres |
+
+**Merged:** [PR #11](https://github.com/amber-siru-lin/ai-sql-poc/pull/11) — `fix(ui): restore chat history when switching sessions`

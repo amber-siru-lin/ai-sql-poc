@@ -54,7 +54,7 @@ sequenceDiagram
 | Event | What happens to `thread_id` |
 |-------|----------------------------|
 | First visit | New UUID; stored in `localStorage` (`ai-sql-poc-thread-id`) |
-| **+ New** (sidebar) or **Clear conversation** (right panel) | New UUID; old server checkpoint stays in API RAM until process exit |
+| **+ New** (sidebar) | New UUID; old server checkpoint stays until process exit or Postgres retention |
 | **Chat history** click | Reuses that session’s UUID; UI restores messages from snapshot or audit |
 | **Semantics** toggle (Off / Wren / Cortex) | New UUID (new LangGraph context for the mode) |
 | API restart | Same UUID in browser, but **server follow-up memory is empty** |
@@ -69,7 +69,7 @@ The thread ID is the join key across UI, LangGraph, retry policy, and audit.
 
 | | |
 |--|--|
-| **Code** | `MemorySaver()` (default) or `PostgresSaver` via `src/checkpoint_factory.py` when `DATABASE_URL` is set |
+| **Code** | `MemorySaver()` (default) or `AsyncPostgresSaver` via `src/checkpoint_factory.py` when `DATABASE_URL` is set |
 | **Key** | `config.configurable.thread_id` (from AG-UI / `HttpAgent`) |
 | **Survives** | Browser refresh **if** same thread id **and** API still running; **API restart** only with Postgres |
 | **Lost when** | uvicorn restart with MemorySaver; deploy without durable checkpointer |
@@ -150,7 +150,7 @@ src/semantic_layer/retry_policy.py
 src/audit_logger.py / audit_reader.py
 api/main.py                       # /api/audit/sessions, /api/audit/logs
 
-ui/src/App.tsx                    # selectThread: flush → set threadId; CopilotKit threadId prop
+ui/src/App.tsx                    # selectThread: flush → set threadId; HttpAgent injects thread per request
 ui/src/lib/httpAgent.ts           # threadId on each AG-UI request
 ui/src/lib/chatPersistence.ts
 ui/src/lib/resolveThreadMessages.ts

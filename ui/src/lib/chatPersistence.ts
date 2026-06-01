@@ -1,4 +1,5 @@
 import type { AuditLogEntry } from "../types/audit";
+import { saveMessagesToApi } from "./sessionApi";
 
 /** Minimal shape CopilotKit accepts via setMessages. */
 export type StoredChatMessage = {
@@ -120,9 +121,11 @@ export function applyThreadTranscript(
 
 export function saveThreadMessages(threadId: string, messages: StoredChatMessage[]): void {
   if (messages.length === 0) return;
+  const capped = messages.slice(-80);
   const store = readStore();
-  store[threadId] = messages.slice(-80);
+  store[threadId] = capped;
   writeStore(store);
+  void saveMessagesToApi(threadId, capped);
 }
 
 export function clearThreadMessages(threadId: string): void {
