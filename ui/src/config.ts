@@ -36,7 +36,7 @@ export type ApiStatusResponse = {
   audit?: AuditConfig;
 };
 
-export type AppView = "chat" | "audit";
+export type AppView = "chat" | "audit" | "semantic";
 
 export const SAMPLE_QUESTIONS = [
   "What is the total amount of all orders?",

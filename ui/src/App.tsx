@@ -37,7 +37,7 @@ export default function App() {
 
   const handleViewChange = useCallback((view: AppView) => {
     setActiveView(view);
-    if (view === "chat") setAuditThreadFilter(undefined);
+    if (view !== "audit") setAuditThreadFilter(undefined);
   }, []);
 
   const openAuditForThread = useCallback(() => {
