@@ -214,8 +214,9 @@ Three layers block secrets and profile files from landing on `main`:
 | Layer | What | When |
 |-------|------|------|
 | **Local** | Gitleaks + path check via pre-commit | Every `git commit` |
-| **CI** | `.github/workflows/secret-scan.yml` | Every PR and push to `main` |
-| **Merge gate** | Branch protection requires both checks | Before merge |
+| **CI — secrets** | `.github/workflows/secret-scan.yml` | Every PR and push to `main` |
+| **CI — quality** | `.github/workflows/ci.yml` (`python-tests`, `ui-build`) | Every PR and push to `main` |
+| **Merge gate** | Branch protection requires all four checks | Before merge |
 
 **Never commit:** `config/snowflake_config.py`, `wren/profiles.yml`, `~/.wren/profiles.yml`, `.env`, AWS keys. Templates like `snowflake_config.example.py` and `.env.example` are fine.
 
@@ -237,7 +238,7 @@ After `.github/workflows/secret-scan.yml` has run at least once on a PR:
 
 1. Repo → **Settings** → **Branches** → add/edit rule for `main`
 2. Enable **Require a pull request before merging**
-3. Enable **Require status checks to pass** and select **`gitleaks`** and **`block-sensitive-paths`**
+3. Enable **Require status checks to pass** and select **`gitleaks`**, **`block-sensitive-paths`**, **`python-tests`**, and **`ui-build`**
 
 **Option B — CLI** (repo admin + `gh auth login`):
 
