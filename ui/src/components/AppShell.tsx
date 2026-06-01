@@ -1,28 +1,26 @@
-import { CopilotChat } from "@copilotkit/react-ui";
-
-import type { AppView, SemanticLayerMode, SemanticLayerStatus } from "../config";
+import type {
+  AppView,
+  AuditConfig,
+  SemanticLayerMode,
+  SemanticLayerStatus,
+} from "../config";
 import type { AuditSession } from "../types/audit";
 import { AuditLogsPage } from "./AuditLogsPage";
-import { SemanticLayerPage } from "./SemanticLayerPage";
-import { AssistantMessage } from "./AssistantMessage";
-import { ChatSessionRestore } from "./ChatSessionRestore";
-import { chatMarkdownTagRenderers } from "./chatMarkdownRenderers";
+import { ChatPane } from "./ChatPane";
 import { ContextSidebar } from "./ContextSidebar";
 import { LeftSidebar } from "./LeftSidebar";
+import { SemanticLayerPage } from "./SemanticLayerPage";
 import "./AppShell.css";
-
-const CHAT_LABELS = {
-  title: "SQL Assistant",
-  initial: "Ask a question about TPCH_SF1…",
-} as const;
 
 type Props = {
   apiStatus: string;
+  auditStatus: AuditConfig | null;
   semanticLayerMode: SemanticLayerMode;
   semanticStatus: SemanticLayerStatus | null;
   onSemanticLayerChange: (mode: SemanticLayerMode) => void;
   chatInstructions: string;
   threadId: string;
+  reloadNonce: number;
   onThreadIdChange: (nextId: string) => void;
   activeView: AppView;
   onViewChange: (view: AppView) => void;
@@ -30,15 +28,20 @@ type Props = {
   onOpenAuditForThread?: () => void;
   onNewChat: () => void;
   onSessionsChanged: () => void;
+  sessions: AuditSession[];
+  sessionsLoading: boolean;
+  sessionsError: string | null;
 };
 
 export function AppShell({
   apiStatus,
+  auditStatus,
   semanticLayerMode,
   semanticStatus,
   onSemanticLayerChange,
   chatInstructions,
   threadId,
+  reloadNonce,
   onThreadIdChange,
   activeView,
   onViewChange,
@@ -46,11 +49,15 @@ export function AppShell({
   onOpenAuditForThread,
   onNewChat,
   onSessionsChanged,
+  sessions,
+  sessionsLoading,
+  sessionsError,
 }: Props) {
   return (
     <div className="app-layout">
       <LeftSidebar
         apiStatus={apiStatus}
+        auditStatus={auditStatus}
         semanticLayerMode={semanticLayerMode}
         semanticStatus={semanticStatus}
         onSemanticLayerChange={onSemanticLayerChange}
@@ -59,23 +66,20 @@ export function AppShell({
         threadId={threadId}
         onSelectSession={onThreadIdChange}
         onNewChat={onNewChat}
+        sessions={sessions}
+        sessionsLoading={sessionsLoading}
+        sessionsError={sessionsError}
+        onSessionsRefresh={onSessionsChanged}
       />
 
       <main className="app-layout__main">
         {activeView === "chat" ? (
-          <div className="app-chat-pane">
-            <ChatSessionRestore
-              threadId={threadId}
-              onSessionsChanged={onSessionsChanged}
-            />
-            <CopilotChat
-              className="app-chat"
-              instructions={chatInstructions}
-              labels={CHAT_LABELS}
-              AssistantMessage={AssistantMessage}
-              markdownTagRenderers={chatMarkdownTagRenderers}
-            />
-          </div>
+          <ChatPane
+            threadId={threadId}
+            reloadNonce={reloadNonce}
+            chatInstructions={chatInstructions}
+            onSessionsChanged={onSessionsChanged}
+          />
         ) : activeView === "audit" ? (
           <AuditLogsPage filterThreadId={auditThreadFilter} />
         ) : (

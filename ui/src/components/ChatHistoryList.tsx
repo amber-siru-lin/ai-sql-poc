@@ -14,8 +14,11 @@ function formatSessionTime(iso: string): string {
   }
 }
 
-function truncateTitle(title: string, max = 52): string {
-  const t = title.trim();
+function truncateTitle(title: string | undefined, max = 52): string {
+  const t = (title ?? "").trim();
+  if (!t) return "(untitled session)";
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
 }
@@ -24,7 +27,7 @@ type Props = {
   activeThreadId: string;
   onSelectSession: (threadId: string) => void;
   onNewChat: () => void;
-  sessions: import("../types/audit").AuditSession[];
+  sessions: AuditSession[];
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
@@ -34,11 +37,12 @@ export function ChatHistoryList({
   activeThreadId,
   onSelectSession,
   onNewChat,
-  sessions,
+  sessions = [],
   loading,
   error,
   onRefresh,
 }: Props) {
+  const safeSessions = sessions ?? [];
 
   return (
     <section className="chat-history" aria-label="Chat history">
@@ -58,22 +62,20 @@ export function ChatHistoryList({
         <p className="chat-history__hint">Loading sessions…</p>
       ) : error ? (
         <p className="chat-history__hint chat-history__hint--error">{error}</p>
-      ) : sessions.length === 0 ? (
+      ) : safeSessions.length === 0 ? (
         <p className="chat-history__hint">
           No sessions yet. Ask a question — each run is saved to the audit log.
         </p>
       ) : (
         <ul className="chat-history__list">
-          {sessions.map((session: AuditSession) => {
+          {safeSessions.map((session: AuditSession) => {
             const active = session.thread_id === activeThreadId;
             return (
               <li key={session.thread_id}>
                 <button
                   type="button"
                   className={`chat-history__item${active ? " chat-history__item--active" : ""}`}
-                  onClick={() => {
-                    if (!active) onSelectSession(session.thread_id);
-                  }}
+                  onClick={() => onSelectSession(session.thread_id)}
                   title={session.title}
                 >
                   <span className="chat-history__item-title">

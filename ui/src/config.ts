@@ -21,11 +21,16 @@ export type SemanticLayerStatus = {
   cortex_message: string;
 };
 
+export type AuditS3Status = "ok" | "error" | "not_configured";
+
 export type AuditConfig = {
+  destination: "s3" | "local" | "both";
   s3_bucket: string | null;
   s3_prefix: string;
-  local_dir: string;
+  local_dir: string | null;
   enabled: boolean;
+  s3_status?: AuditS3Status;
+  s3_message?: string;
 };
 
 export type ApiStatusResponse = {

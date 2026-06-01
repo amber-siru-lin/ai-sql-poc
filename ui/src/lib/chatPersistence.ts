@@ -1,10 +1,15 @@
-import type { Message } from "@copilotkit/react-core";
-
 import type { AuditLogEntry } from "../types/audit";
+
+/** Minimal shape CopilotKit accepts via setMessages. */
+export type StoredChatMessage = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+};
 
 const STORAGE_KEY = "ai-sql-poc-chat-snapshots";
 
-type SnapshotStore = Record<string, Message[]>;
+type SnapshotStore = Record<string, StoredChatMessage[]>;
 
 function readStore(): SnapshotStore {
   try {
@@ -25,13 +30,56 @@ function writeStore(store: SnapshotStore): void {
   }
 }
 
-export function loadThreadMessages(threadId: string): Message[] {
+export function loadThreadMessages(threadId: string): StoredChatMessage[] {
   const store = readStore();
   const messages = store[threadId];
   return Array.isArray(messages) ? messages : [];
 }
 
-export function saveThreadMessages(threadId: string, messages: Message[]): void {
+/** Serialize CopilotKit messages for localStorage. */
+export function toStoredMessages(messages: unknown): StoredChatMessage[] {
+  if (!Array.isArray(messages)) return [];
+  const stored: StoredChatMessage[] = [];
+  for (const m of messages) {
+    if (!m || typeof m !== "object") continue;
+    const msg = m as { id?: string; role?: string; content?: unknown };
+    if (msg.role !== "user" && msg.role !== "assistant" && msg.role !== "system") {
+      continue;
+    }
+    if (!msg.id) continue;
+    let content = "";
+    if (typeof msg.content === "string") {
+      content = msg.content;
+    } else if (Array.isArray(msg.content)) {
+      content = msg.content
+        .map((block) => {
+          if (typeof block === "string") return block;
+          if (block && typeof block === "object") {
+            if ("text" in block) return String((block as { text?: string }).text ?? "");
+            if ("type" in block && (block as { type?: string }).type === "text") {
+              return String((block as { text?: string }).text ?? "");
+            }
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join("\n");
+    } else if (msg.content != null) {
+      content = JSON.stringify(msg.content);
+    }
+    // Keep user messages even if assistant/tool payloads are empty.
+    if (!content.trim() && msg.role !== "user") continue;
+    if (!content.trim()) content = "(empty message)";
+    stored.push({
+      id: msg.id,
+      role: msg.role as StoredChatMessage["role"],
+      content,
+    });
+  }
+  return stored;
+}
+
+export function saveThreadMessages(threadId: string, messages: StoredChatMessage[]): void {
   if (messages.length === 0) return;
   const store = readStore();
   store[threadId] = messages.slice(-80);
@@ -66,11 +114,11 @@ function assistantContentFromAudit(entry: AuditLogEntry): string {
 }
 
 /** Rebuild a read-only chat transcript from audit runs (oldest first). */
-export function messagesFromAuditEntries(entries: AuditLogEntry[]): Message[] {
+export function messagesFromAuditEntries(entries: AuditLogEntry[]): StoredChatMessage[] {
   const ordered = [...entries].sort((a, b) =>
     (a.timestamp || "").localeCompare(b.timestamp || ""),
   );
-  const messages: Message[] = [];
+  const messages: StoredChatMessage[] = [];
 
   for (const entry of ordered) {
     if (entry.question) {

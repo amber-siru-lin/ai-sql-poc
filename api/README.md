@@ -3,6 +3,8 @@
 Exposes the Phase 2 Deep Agent to the browser via **AG-UI** (`ag-ui-langgraph`). CopilotKit in `ui/` uses a local `HttpAgent` for chat plus a small **runtime stub** for CopilotKit sync.
 
 **Integration learnings:** [docs/solutions/copilotkit-local-ui-learnings.md](../docs/solutions/copilotkit-local-ui-learnings.md)  
+**Memory & sessions:** [docs/solutions/chat-memory-and-session-learnings.md](../docs/solutions/chat-memory-and-session-learnings.md)  
+**Postgres (optional):** [docs/architecture/postgres-local-dev.md](../docs/architecture/postgres-local-dev.md)  
 **Query audit logs:** [docs/audit-logs/README.md](../docs/audit-logs/README.md)
 
 ## Run
@@ -12,6 +14,10 @@ From repo root (so `src/` and `config/` imports resolve):
 ```bash
 export AWS_PROFILE=Brainfore-Team-Set-654654461736
 aws sso login --profile $AWS_PROFILE
+
+# Optional — durable LangGraph checkpoints (Phase 3.6)
+docker compose up -d
+# Add DATABASE_URL=postgresql://ai_sql:ai_sql_dev@localhost:5432/ai_sql_poc to .env
 
 scripts/py scripts/sync_wren_profile.py   # optional, for Wren mode
 
@@ -26,7 +32,7 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 
 | Path | Purpose |
 |------|---------|
-| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) |
+| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) + `checkpoint.backend` |
 | `GET /api/audit/logs` | Query audit JSONL for UI (`?date=`, `?limit=`, `?thread_id=`) |
 | `POST /` | **AG-UI agent runs** (SSE stream) — used by `HttpAgent` |
 | `GET /copilotkit/info` | CopilotKit runtime info (REST transport) |

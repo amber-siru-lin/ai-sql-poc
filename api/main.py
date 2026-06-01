@@ -38,6 +38,7 @@ from src.ag_ui_agent import SemanticLayerLangGraphAgent
 from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
 from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
+from src.checkpoint_factory import checkpoint_backend, init_checkpointer_from_env, shutdown_checkpointer
 from src.check_setup import check_all
 from src.semantic_editor import build_consumers_response
 from src.semantic_layer.types import SEMANTIC_LAYER_MODES, DEFAULT_SEMANTIC_LAYER
@@ -85,7 +86,7 @@ def audit_logs(
     limit: int = 50,
     thread_id: str | None = None,
 ):
-    """List query audit records from local JSONL (newest first)."""
+    """List query audit records from S3 (newest first)."""
     return {
         "audit": audit_config(),
         "dates": list_audit_dates(),
@@ -117,7 +118,11 @@ def status():
         "agent": AGENT_NAME,
         "dataset": "TPCH_SF1",
         "semantic_layer": _semantic_layer_status(),
-        "audit": audit_config(),
+        "audit": audit_config(check_s3=True),
+        "checkpoint": {
+            "backend": checkpoint_backend(),
+            "database_url_configured": bool(os.environ.get("DATABASE_URL", "").strip()),
+        },
     }
 
 
@@ -150,10 +155,18 @@ async def copilotkit_single_endpoint(body: CopilotKitMethodRequest):
 @app.on_event("startup")
 def startup() -> None:
     check_all()
-    graph = build_agent_graph(DEFAULT_SEMANTIC_LAYER)
+    init_checkpointer_from_env()
+    from src.checkpoint_factory import get_checkpointer
+
+    graph = build_agent_graph(DEFAULT_SEMANTIC_LAYER, checkpointer=get_checkpointer())
     agent = SemanticLayerLangGraphAgent(
         name=AGENT_NAME,
         description=AGENT_DESCRIPTION,
         graph=graph,
     )
     add_langgraph_fastapi_endpoint(app, agent, path="/")
+
+
+@app.on_event("shutdown")
+def shutdown() -> None:
+    shutdown_checkpointer()

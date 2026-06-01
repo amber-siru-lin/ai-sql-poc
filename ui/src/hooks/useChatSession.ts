@@ -31,6 +31,6 @@ export function useChatSession(
     isLoading,
     lastClearedAt,
     startNewConversation,
-    messageCount: messages.length,
+    messageCount: messages?.length ?? 0,
   };
 }

@@ -168,6 +168,29 @@ Options (pick one when ready):
 
 Not in scope until local path works.
 
+### Phase 3.6 — Durable chat memory & sessions (next)
+
+Apply production patterns incrementally while staying local-first. Full context: [chat-memory-and-sessions.md](../architecture/chat-memory-and-sessions.md).
+
+| Step | What | Why | Suggested approach |
+|------|------|-----|-------------------|
+| **3.6.1** | **LangGraph Postgres checkpointer** | Follow-ups survive API restart | `docker compose up -d` + `DATABASE_URL` → `PostgresSaver` in `checkpoint_factory.py` — [postgres-local-dev.md](../architecture/postgres-local-dev.md) |
+| **3.6.2** | **Server-side sessions API** | Cross-device history, source of truth for sidebar | Postgres tables `conversations` + `messages`; `GET/POST /api/sessions`, `GET /api/sessions/{id}/messages` |
+| **3.6.3** | **Stop deriving UX from audit alone** | Audit is per-run, not a transcript | Write messages to DB on each turn; keep S3 audit for compliance |
+| **3.6.4** | **User / tenant scoping** | Prevent cross-user thread leakage | Auth stub → `user_id` on sessions; filter all reads/writes |
+| **3.6.5** | **Context window strategy** | Long threads exceed model limits | Summarize older turns or retrieve last N + relevant audit SQL |
+| **3.6.6** | **Browser cache as optional** | localStorage is a cache, not authority | UI loads from API first; fall back to localStorage offline |
+
+**Recommended stack for this repo (POC → MVP):**
+
+1. **Postgres** (Docker Compose) — one database for LangGraph checkpoints + app sessions/messages.
+2. Keep **S3 audit** as-is for query compliance.
+3. Keep **Wren memory** separate (semantic recall, not chat).
+
+**Out of scope for 3.6:** Aurora pgvector for RAG (CTA Layer 5), multi-user auth productization, CopilotKit Cloud thread sync.
+
+**Done in POC (Jun 2026):** sidebar session list from audit, browser snapshots, `ChatPane` thread bootstrap — see [chat-memory-and-sessions.md](../architecture/chat-memory-and-sessions.md).
+
 ---
 
 ## Risks & mitigations
