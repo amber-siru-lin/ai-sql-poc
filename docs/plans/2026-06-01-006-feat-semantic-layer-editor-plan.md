@@ -15,6 +15,7 @@ related:
   - docs/plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md
   - docs/architecture/query-and-memory-storage.md
   - docs/architecture/chat-memory-and-sessions.md
+  - docs/architecture/semantic-layer-editor.md
   - docs/audit-logs/README.md
   - wren/tpch/README.md
 ---
@@ -282,36 +283,37 @@ flowchart TB
 
 ---
 
-### Unit 4: GitHub PR API (1 day)
+### Unit 4: GitHub PR API (1 day) — done (PR #10)
 
-- Branch lifecycle, commit, PR create, error handling (no token, push rejected).
-- PR body builder from diff + optional audit IDs.
+- [x] Branch lifecycle, commit, PR create, error handling (no token, push rejected).
+- [x] PR body builder from diff + optional audit IDs.
 
 **Verify:** End-to-end PR opened on a test repo fork or branch with CI skipped for POC.
 
 ---
 
-### Unit 5: Editor AI agent (1–2 days)
+### Unit 5: Editor AI agent (1–2 days) — done (PR #12)
 
-- `build_editor_agent_graph()` in `src/agent_factory.py` or `src/semantic_editor/agent.py`.
-- Register second CopilotKit agent or dedicated `/api/semantic/agent` AG-UI endpoint.
-- Wire audit + Snowflake tools with stricter guards than NL→SQL agent.
+- [x] `build_editor_agent_graph()` in `src/semantic_editor/agent.py`.
+- [x] Dedicated `/semantic-agent` AG-UI endpoint + `SemanticEditorChat` in UI.
+- [x] Audit + Snowflake tools with stricter guards than NL→SQL agent.
+- [x] Editor session history (audit `source=semantic_editor` + localStorage).
 
 **Verify:** Ask “why did orders join fail?” with audit context → proposes relationship fix diff.
 
 ---
 
-### Unit 6: Audit context + PR enrichment (½ day)
+### Unit 6: Audit context + PR enrichment (½ day) — deferred (optional)
 
-- `GET /api/semantic/audit-context?model=orders&limit=10`
-- PR wizard pulls recent errors into body template.
+- [ ] `GET /api/semantic/audit-context?model=orders&limit=10` — **optional**; `search_audit_entries()` and editor `search_audit_logs` tool already cover interactive use.
+- [ ] PR wizard auto-pulls recent errors into body — **recommended lightweight follow-up**: call `search_audit_entries` from `build_pr_draft()` using model name inferred from changed paths (no new endpoint required).
 
 ---
 
-### Unit 7: Docs + agent-native checklist (2 hours)
+### Unit 7: Docs + agent-native checklist (2 hours) — done
 
-- Update `docs/README.md`, `ui/README.md`, `AGENTS.md` dev restart notes.
-- OpenAPI snippet or `docs/architecture/semantic-layer-editor.md`.
+- [x] Update `docs/README.md`, `ui/README.md`, `AGENTS.md` dev restart notes.
+- [x] [docs/architecture/semantic-layer-editor.md](../architecture/semantic-layer-editor.md) + agent-native checklist.
 
 ---
 

@@ -32,13 +32,16 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 
 | Path | Purpose |
 |------|---------|
-| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) + `checkpoint.backend` |
-| `GET /api/audit/logs` | Query audit JSONL for UI (`?date=`, `?limit=`, `?thread_id=`) |
-| `POST /` | **AG-UI agent runs** (SSE stream) — used by `HttpAgent` |
+| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) + `checkpoint.backend` + Postgres Docker hint |
+| `GET /api/audit/logs` | Query audit JSONL for UI (`?date=`, `?limit=`, `?thread_id=`, `?source=`) |
+| `GET /api/audit/sessions` | Sessions grouped by `thread_id` (`?source=api` default; use `semantic_editor` for editor history) |
+| `POST /` | **NL→SQL AG-UI agent** (`nl2sql_assistant`) — SSE stream |
+| `POST /semantic-agent` | **Editor AG-UI agent** (`semantic_editor`) — SSE stream |
+| `GET /api/semantic/*` | File tree, read/write, validate, GitHub PR draft/create — see [semantic-layer-editor.md](../docs/architecture/semantic-layer-editor.md) |
 | `GET /copilotkit/info` | CopilotKit runtime info (REST transport) |
 | `POST /copilotkit` | CopilotKit single-endpoint info (`{"method":"info"}`) |
 
-The `/copilotkit` stub returns `{ "version": "0.2.0", "agents": {} }` so CopilotKit sync succeeds without replacing the local `HttpAgent`.
+The `/copilotkit` stub returns `{ "version": "0.2.0", "agents": {} }` so CopilotKit sync succeeds without replacing the local `HttpAgent` clients in `ui/`.
 
 ## Semantic layer toggle (UI)
 
@@ -47,6 +50,12 @@ CopilotKit sends `forwardedProps.semanticLayer` (`off` | `wren` | `cortex`) on e
 - **off** — markdown schema + `execute_snowflake_sql`
 - **wren** — `wren_*` tools (see `wren/tpch/README.md`)
 - **cortex** — placeholder until Semantic View + Analyst REST are wired
+
+## Semantic layer editor
+
+Third UI view with REST file APIs and a dedicated editor agent. Full reference: [docs/architecture/semantic-layer-editor.md](../docs/architecture/semantic-layer-editor.md).
+
+**PR workflow env:** `GITHUB_TOKEN`, `GITHUB_REPO` in repo-root `.env`.
 
 ## Dependencies
 

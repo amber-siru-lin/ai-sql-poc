@@ -47,4 +47,5 @@
 | [query-and-memory-storage.md](architecture/query-and-memory-storage.md) | **Where memory & query logs live** (POC vs CTA target) |
 | [chat-memory-and-sessions.md](architecture/chat-memory-and-sessions.md) | **Chat threads, sessions, snapshots, and follow-ups** |
 | [postgres-local-dev.md](architecture/postgres-local-dev.md) | **Docker Compose + Postgres** for LangGraph checkpoints (Phase 3.6) |
+| [semantic-layer-editor.md](architecture/semantic-layer-editor.md) | **Semantic layer page** — file editor, PR workflow, editor AI, REST/AG-UI |
 | [audit-logs/README.md](audit-logs/README.md) | **Query audit log** — S3 bucket, env vars, restart API, inspect records |
