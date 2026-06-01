@@ -1,14 +1,100 @@
 # AI SQL POC
 
-Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**.
+Natural language → SQL on **Snowflake TPCH_SF1**, with **Amazon Bedrock (Nova Pro)** orchestration and an optional **[Wren AI](https://getwren.ai)** semantic layer (MDL in git).
+
+This repo compares **how the agent runs** (one-shot vs Deep Agents vs Claude SDK) and **how semantics are defined** (markdown vs **Wren MDL** vs **Snowflake Cortex Analyst**). The CopilotKit UI exposes a **Semantics** toggle: **Off** | **Wren** | **Cortex**.
 
 | Phase | What | Status |
 |-------|------|--------|
 | **1** | ChatBedrock single-shot NL→SQL | Done |
 | **2** | LangChain Deep Agents + tools + chat memory | Done |
-| **3** | Web UI (CopilotKit local) | Working locally — [learnings](docs/solutions/copilotkit-local-ui-learnings.md) |
+| **3** | CopilotKit UI + FastAPI AG-UI | Done |
+| **4** | Wren `main` + Cortex Analyst harness | In progress — [plan](docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) |
 
-**Phase-by-phase file guide:** [docs/PHASES.md](docs/PHASES.md)
+**Guides:** [docs/PHASES.md](docs/PHASES.md) · [Wren setup](wren/tpch/README.md) · [Harness comparison](docs/architecture/nl2sql-harness-comparison.md) · [Wren vs Cortex](docs/architecture/wren-vs-snowflake-cortex-analyst.md)
+
+---
+
+## Architecture
+
+### This repo (what runs today)
+
+```mermaid
+flowchart LR
+  U[User] --> UI[CopilotKit ui/]
+  UI -->|AG-UI + semanticLayer| API[FastAPI api/]
+  API --> AG[Deep Agent · Bedrock Nova]
+  AG --> MODE{Semantics toggle}
+  MODE -->|Off| OFF[schema/tpch_sf1.md + execute_snowflake_sql]
+  MODE -->|Wren| WREN[wren_* tools + wren/tpch MDL]
+  MODE -->|Cortex| CX[ask_cortex_analyst stub]
+  OFF --> SF[(Snowflake TPCH_SF1)]
+  WREN --> SF
+  CX -.-> SF
+```
+
+- **Off** — model writes raw `TPCH_SF1.*` SQL (Phase 1–2 style).
+- **Wren** — model writes SQL over MDL **models** (`customer`, `orders`, …); Wren expands and executes ([`wren/tpch/`](wren/tpch/)).
+- **Cortex** — placeholder until Semantic View + Analyst REST are wired.
+
+### Orchestration harnesses (who runs the agent loop?)
+
+Same LLM quality for SQL if the prompt and schema are the same — the difference is **framework vs hand-rolled** vs **one-shot**.
+
+```mermaid
+flowchart TB
+  subgraph in_repo [In this repo]
+    P1["Phase 1 · src/nl2sql.py<br/>one Bedrock call → SQL → Snowflake"]
+    DA["Phase 2–3 · Deep Agents<br/>src/ask_deep_agent.py · api/ · ui/"]
+  end
+
+  subgraph research [Research / alternative]
+    CS["Claude SDK · hand-rolled loop<br/>Bedrock/Anthropic API · you own retries + history"]
+  end
+
+  P1 --> DA
+  DA -.->|same role, more code you own| CS
+```
+
+| Harness | Role | In repo? |
+|---------|------|----------|
+| **Phase 1** | Single NL→SQL call, no tools | `src/nl2sql.py` |
+| **Deep Agents** | Tool loop, memory, CopilotKit | **Yes** — primary path |
+| **Claude SDK** | Custom agent without LangChain | Documented only — [comparison](docs/architecture/nl2sql-harness-comparison.md#deep-agents-vs-claude-sdk) |
+
+### Semantic layer (what does “revenue” mean?)
+
+Orthogonal to orchestration — pick a **primary** source of truth for joins and metrics.
+
+```mermaid
+flowchart TB
+  subgraph agent [Orchestration · Deep Agent + Bedrock]
+    AG[Agent]
+  end
+
+  subgraph semantics [Semantic layer · UI toggle]
+    OFF["Off<br/>markdown schema"]
+    WREN["Wren AI main<br/>MDL in wren/tpch/"]
+    CORTEX["Snowflake Cortex Analyst<br/>Semantic View + REST"]
+  end
+
+  SF[(Snowflake)]
+
+  AG --> OFF
+  AG --> WREN
+  AG --> CORTEX
+  OFF --> SF
+  WREN --> SF
+  CORTEX --> SF
+```
+
+| Mode | Contract | LLM | Status here |
+|------|----------|-----|-------------|
+| **Off** | `schema/tpch_sf1.md` in prompt | Bedrock | Working |
+| **Wren** | MDL models, relationships, `instructions.md` | Bedrock (you bring LLM) | Working — `pip install "wrenai[snowflake,memory]"` |
+| **Cortex** | Semantic View in Snowflake | Snowflake Cortex models | Stub only |
+
+Deep dive: [NL→SQL harness comparison](docs/architecture/nl2sql-harness-comparison.md) · [Wren vs Cortex Analyst](docs/architecture/wren-vs-snowflake-cortex-analyst.md) · [agent error handling](docs/architecture/agent-error-handling.md)
 
 ---
 
@@ -25,14 +111,14 @@ Natural language → SQL using **Amazon Bedrock (Nova Pro)** + **Snowflake**.
 │   ├── agent_streaming.py  # Phase 2 --verbose steps
 │   ├── semantic_layer/     # Off/Wren/Cortex prompts + retry policy
 │   └── tools/              # Snowflake, Wren, Cortex tools
-├── wren/tpch/              # Wren MDL (TPCH_SF1)
+├── wren/tpch/              # Wren MDL (TPCH_SF1) — build → target/mdl.json (gitignored)
 ├── ui/                     # Phase 3B — CopilotKit + Vite React
 ├── api/                    # Phase 3B — FastAPI AG-UI server
 ├── config/                 # Local secrets (snowflake_config.py gitignored)
 ├── schema/                 # tpch_sf1.md — shared by all phases
-├── scripts/                # py, setup_aws.sh, diagnose_bedrock.py
+├── scripts/                # py, sync_wren_profile.py, diagnose_bedrock.py
 ├── sql/                    # Optional Snowflake setup
-├── docs/                   # Plans + PHASES.md
+├── docs/                   # Plans + architecture
 └── web/                    # Phase 3A (parked) — Amplify Gen 2 scaffold
 ```
 
@@ -66,7 +152,7 @@ scripts/py src/run_baseline_test.py   # one-shot test
 scripts/py src/ask_questions.py       # ask your own questions
 ```
 
-No Deep Agent files involved.
+No Deep Agent or Wren files involved.
 
 ---
 
@@ -96,7 +182,8 @@ Type `clear` in the REPL to reset conversation memory.
 
 ```bash
 scripts/py -m pip install -r requirements.txt
-# Optional Wren mode: scripts/py -m pip install "wrenai[snowflake,memory]" pyyaml
+# Wren mode:
+scripts/py -m pip install "wrenai[snowflake,memory]" pyyaml
 cd ui && npm install && cd ..
 ```
 
@@ -118,16 +205,11 @@ Open **http://localhost:5173** — chat in the **SQL Assistant** panel on the ri
 
 Details: [ui/README.md](ui/README.md) · [wren/tpch/README.md](wren/tpch/README.md) · [docs/PHASES.md](docs/PHASES.md#phase-3b--copilotkit-active-local)
 
-| Phase | Status | Doc |
-|-------|--------|-----|
-| **4** Wren + Cortex harness | In progress | [Phase 4 plan](docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) · [semantic toggle](docs/plans/2026-06-01-005-feat-copilotkit-semantic-layer-toggle-plan.md) |
-| **Agent errors** | Enforced in code | [agent-error-handling.md](docs/architecture/agent-error-handling.md) |
-
 ---
 
 ## Security
 
-- `config/snowflake_config.py` and `.env` are **gitignored**
+- `config/snowflake_config.py`, `~/.wren/profiles.yml`, and `.env` are **gitignored**
 - Never commit passwords or AWS keys
 - See [config/README.md](config/README.md)
 
@@ -135,4 +217,6 @@ Details: [ui/README.md](ui/README.md) · [wren/tpch/README.md](wren/tpch/README.
 
 - [docs/PHASES.md](docs/PHASES.md) — isolate Phase 1 / 2 / 3
 - [docs/README.md](docs/README.md) — plans and requirements index
-- [NL→SQL harness comparison](docs/architecture/nl2sql-harness-comparison.md)
+- [NL→SQL harness comparison](docs/architecture/nl2sql-harness-comparison.md) — Deep Agents, Claude SDK, Wren, Cortex
+- [Wren vs Cortex Analyst](docs/architecture/wren-vs-snowflake-cortex-analyst.md)
+- [Agent error handling](docs/architecture/agent-error-handling.md)
