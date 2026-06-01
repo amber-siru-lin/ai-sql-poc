@@ -209,9 +209,43 @@ Details: [ui/README.md](ui/README.md) · [wren/tpch/README.md](wren/tpch/README.
 
 ## Security
 
-- `config/snowflake_config.py`, `~/.wren/profiles.yml`, and `.env` are **gitignored**
-- Never commit passwords or AWS keys
-- See [config/README.md](config/README.md)
+Three layers block secrets and profile files from landing on `main`:
+
+| Layer | What | When |
+|-------|------|------|
+| **Local** | Gitleaks + path check via pre-commit | Every `git commit` |
+| **CI** | `.github/workflows/secret-scan.yml` | Every PR and push to `main` |
+| **Merge gate** | Branch protection requires both checks | Before merge |
+
+**Never commit:** `config/snowflake_config.py`, `wren/profiles.yml`, `~/.wren/profiles.yml`, `.env`, AWS keys. Templates like `snowflake_config.example.py` and `.env.example` are fine.
+
+### One-time local setup
+
+```bash
+pip install pre-commit   # or: brew install pre-commit
+pre-commit install
+pre-commit run --all-files   # optional smoke test
+```
+
+Manual scans: `pre-commit run gitleaks --all-files` · `scripts/check-sensitive-paths.sh --staged`
+
+### Branch protection (merge gate)
+
+After `.github/workflows/secret-scan.yml` has run at least once on a PR:
+
+**Option A — GitHub UI**
+
+1. Repo → **Settings** → **Branches** → add/edit rule for `main`
+2. Enable **Require a pull request before merging**
+3. Enable **Require status checks to pass** and select **`gitleaks`** and **`block-sensitive-paths`**
+
+**Option B — CLI** (repo admin + `gh auth login`):
+
+```bash
+scripts/setup-branch-protection.sh
+```
+
+See [config/README.md](config/README.md) for credential setup.
 
 ## Docs
 
