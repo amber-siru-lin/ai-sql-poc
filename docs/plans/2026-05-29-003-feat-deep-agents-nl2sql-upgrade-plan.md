@@ -4,6 +4,7 @@ type: feat
 status: active
 date: 2026-05-29
 origin: docs/plans/2026-05-28-002-feat-simple-ai-nl2sql-poc-plan.md
+related: docs/architecture/nl2sql-harness-comparison.md
 depends_on:
   - ~/ai-sql-test/test_ai_sql.py (working baseline)
   - docs/brainstorms/2026-05-27-ai-data-analysis-poc-meeting-prep.md (Harness Option 1)

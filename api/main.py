@@ -10,13 +10,17 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ag_ui_langgraph import LangGraphAgent, add_langgraph_fastapi_endpoint
+from ag_ui_langgraph import add_langgraph_fastapi_endpoint
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from src.ag_ui_agent import SemanticLayerLangGraphAgent
 from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
 from src.check_setup import check_all
+from src.semantic_layer.types import SEMANTIC_LAYER_MODES, DEFAULT_SEMANTIC_LAYER
+from src.tools.cortex_tools import cortex_ready
+from src.tools.wren_tools import wren_ready
 
 DEFAULT_ORIGINS = [
     "http://localhost:5173",
@@ -27,7 +31,7 @@ DEFAULT_ORIGINS = [
 
 DEV_ORIGIN_REGEX = r"http://(localhost|127\.0\.0\.1):\d+"
 
-app = FastAPI(title="AI SQL POC API", version="0.1.0")
+app = FastAPI(title="AI SQL POC API", version="0.2.0")
 
 _cors_origins = os.environ.get("CORS_ORIGINS")
 app.add_middleware(
@@ -40,6 +44,19 @@ app.add_middleware(
 )
 
 
+def _semantic_layer_status() -> dict:
+    wren_ok, wren_msg = wren_ready()
+    cortex_ok, cortex_msg = cortex_ready()
+    return {
+        "default": DEFAULT_SEMANTIC_LAYER,
+        "modes": list(SEMANTIC_LAYER_MODES),
+        "wren_ready": wren_ok,
+        "wren_message": wren_msg,
+        "cortex_ready": cortex_ok,
+        "cortex_message": cortex_msg,
+    }
+
+
 @app.get("/api/status")
 def status():
     """Lightweight status for the UI header (does not invoke the agent)."""
@@ -47,6 +64,7 @@ def status():
         "status": "ok",
         "agent": AGENT_NAME,
         "dataset": "TPCH_SF1",
+        "semantic_layer": _semantic_layer_status(),
     }
 
 
@@ -56,7 +74,7 @@ def copilotkit_runtime_info() -> dict:
     Empty ``agents`` keeps chat on the local HttpAgent (AG-UI at ``/``) instead of
     registering a proxied runtime agent that would conflict with AG-UI protocol.
     """
-    return {"version": "0.1.0", "agents": {}}
+    return {"version": "0.2.0", "agents": {}}
 
 
 class CopilotKitMethodRequest(BaseModel):
@@ -79,8 +97,8 @@ async def copilotkit_single_endpoint(body: CopilotKitMethodRequest):
 @app.on_event("startup")
 def startup() -> None:
     check_all()
-    graph = build_agent_graph()
-    agent = LangGraphAgent(
+    graph = build_agent_graph(DEFAULT_SEMANTIC_LAYER)
+    agent = SemanticLayerLangGraphAgent(
         name=AGENT_NAME,
         description=AGENT_DESCRIPTION,
         graph=graph,

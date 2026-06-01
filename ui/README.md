@@ -21,6 +21,8 @@ npm run dev
 
 Open http://localhost:5173 — chat panel on the right, placeholder panels on the left.
 
+**Wren mode:** API `/api/status` must show `wren_ready: true`. From repo root: `scripts/py scripts/sync_wren_profile.py`, then `cd wren/tpch && wren context build`. Toggle **Semantics → Wren** in the header (chat remounts when you switch modes).
+
 ## Config
 
 Copy `.env.example` to `.env.local` if the API runs on a different host:
@@ -38,6 +40,7 @@ VITE_COPILOT_RUNTIME_URL=http://localhost:8000/copilotkit
 |------|--------|
 | CopilotKit sidebar chat | MVP |
 | Deep Agent via AG-UI | MVP |
+| Tool cards: Snowflake SQL + Wren run/dry-plan/memory | MVP |
 | SQL preview panel | Placeholder |
 | Results table panel | Placeholder |
 | Agent steps / verbose tools | Placeholder (Phase 3.3) |

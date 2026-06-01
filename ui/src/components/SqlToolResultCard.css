@@ -1,0 +1,170 @@
+.sql-tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin: 0.35rem 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.65rem 0.75rem;
+}
+
+.sql-tool-card--wren {
+  border-color: #c4b5fd;
+}
+
+.sql-tool-card--snowflake {
+  border-color: #7dd3fc;
+}
+
+.sql-tool-card__header {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.sql-tool-card__badge {
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.2rem 0.45rem;
+  text-transform: uppercase;
+}
+
+.sql-tool-card__badge--wren {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.sql-tool-card__badge--snowflake {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.sql-tool-card__status-pill {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: lowercase;
+}
+
+.sql-tool-card__status-text {
+  color: var(--muted);
+  display: block;
+  font-size: 0.8rem;
+}
+
+.sql-tool-card__section {
+  margin-bottom: 0.65rem;
+}
+
+.sql-tool-card__section:last-child {
+  margin-bottom: 0;
+}
+
+.sql-tool-card__section-title {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.sql-tool-card__sql--expanded {
+  max-height: 220px;
+  overflow: auto;
+}
+
+.sql-tool-card__question {
+  color: var(--text);
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+}
+
+.sql-tool-card__question::before {
+  color: var(--muted);
+  content: "Question · ";
+  font-weight: 600;
+}
+
+.sql-tool-card__hint {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 0.35rem 0 0;
+}
+
+.sql-tool-card__empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.sql-tool-card--loading {
+  color: var(--muted);
+}
+
+.sql-tool-card--error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+  white-space: pre-wrap;
+}
+
+.sql-tool-card__sql {
+  background: var(--bg);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin: 0 0 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+}
+
+.sql-tool-card__raw {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.sql-tool-card__table-wrap {
+  margin-bottom: 0.65rem;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.sql-tool-card__table {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  width: 100%;
+}
+
+.sql-tool-card__table th,
+.sql-tool-card__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.sql-tool-card__table th {
+  background: var(--surface-elevated);
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.sql-result-chart {
+  margin-top: 0.25rem;
+}
+
+.sql-result-chart__caption {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin: 0 0 0.35rem;
+}

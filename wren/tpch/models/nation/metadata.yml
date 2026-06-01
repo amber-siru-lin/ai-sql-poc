@@ -1,0 +1,14 @@
+name: nation
+ref_sql: |
+  SELECT
+    N_NATIONKEY AS nation_key,
+    N_NAME AS nation_name
+  FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION
+primary_key: nation_key
+columns:
+  - name: nation_key
+    type: integer
+  - name: nation_name
+    type: varchar
+    properties:
+      description: Nation / country name (N_NAME)

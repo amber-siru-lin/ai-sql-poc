@@ -1,0 +1,6 @@
+name: tpch
+catalog: wren
+schema: public
+data_source: snowflake
+profile: tpch-sf1
+schema_version: 3

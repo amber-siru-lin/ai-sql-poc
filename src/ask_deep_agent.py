@@ -13,21 +13,32 @@ if str(ROOT) not in sys.path:
 from src.agent_factory import build_agent_graph
 from src.agent_streaming import stream_agent
 from src.check_setup import check_all
+from src.semantic_layer.retry_policy import GRAPH_RECURSION_LIMIT
+from src.semantic_layer.types import SEMANTIC_LAYER_MODES, SemanticLayerMode, normalize_semantic_layer
 
 check_all()
 
-agent = build_agent_graph()
 
-
-def ask(question: str, history: list, *, verbose: bool = False) -> tuple[str, list]:
+def ask(
+    question: str,
+    history: list,
+    *,
+    semantic_layer: SemanticLayerMode = "off",
+    verbose: bool = False,
+) -> tuple[str, list]:
     """Send a question with conversation history. Returns (answer, updated history)."""
+    agent = build_agent_graph(semantic_layer)
     messages = list(history)
     messages.append({"role": "user", "content": question})
+    run_config = {
+        "configurable": {"semantic_layer": semantic_layer, "thread_id": "cli"},
+        "recursion_limit": GRAPH_RECURSION_LIMIT,
+    }
 
     if verbose:
-        return stream_agent(agent, messages)
+        return stream_agent(agent, messages, config=run_config)
 
-    result = agent.invoke({"messages": messages})
+    result = agent.invoke({"messages": messages}, config=run_config)
     updated = list(result["messages"])
     return updated[-1].content, updated
 
@@ -40,10 +51,18 @@ def main() -> None:
         action="store_true",
         help="Show planning steps, tool calls, and SQL as the agent runs",
     )
+    parser.add_argument(
+        "--semantic-layer",
+        choices=SEMANTIC_LAYER_MODES,
+        default="off",
+        help="Semantic layer mode: off (markdown schema), wren (MDL), cortex (placeholder)",
+    )
     args = parser.parse_args()
+    mode = normalize_semantic_layer(args.semantic_layer)
 
     print("=" * 70)
     print("AI SQL ASSISTANT - Deep Agent (Phase 2)")
+    print(f"Semantic layer: {mode}")
     if args.verbose:
         print("Verbose mode: ON (showing steps)")
     print("Conversation memory: ON (follow-ups use prior questions)")
@@ -82,7 +101,12 @@ def main() -> None:
             print("Tip: --verbose shows steps | 'clear' resets memory\n")
 
         try:
-            answer, history = ask(question, history, verbose=args.verbose)
+            answer, history = ask(
+                question,
+                history,
+                semantic_layer=mode,
+                verbose=args.verbose,
+            )
             print(answer)
         except Exception as exc:
             print(f"❌ Error: {exc}")

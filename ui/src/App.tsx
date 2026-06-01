@@ -1,70 +1,58 @@
-import { HttpAgent } from "@ag-ui/client";
 import { useEffect, useMemo, useState } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 
 import { AnalysisWorkspace } from "./components/AnalysisWorkspace";
-import { AGENT_ID, API_URL, COPILOT_RUNTIME_URL } from "./config";
+import { CopilotToolRenderers } from "./components/CopilotToolRenderers";
+import { SemanticLayerToggle } from "./components/SemanticLayerToggle";
+import {
+  AGENT_ID,
+  API_URL,
+  COPILOT_RUNTIME_URL,
+  type ApiStatusResponse,
+} from "./config";
+import { useSemanticLayerMode } from "./hooks/useSemanticLayerMode";
+import { createSemanticHttpAgent } from "./lib/httpAgent";
 import "./App.css";
 
 const CHAT_INSTRUCTIONS = `You are helping a business user explore the Snowflake TPCH_SF1 dataset.
-Use get_schema_summary when you need table or column names, then execute_snowflake_sql.
+Use the active semantic layer mode (Off, Wren, or Cortex) as described in your system prompt.
 Always explain the answer in plain English and show the final SQL.`;
 
-function AppShell() {
+export default function App() {
   const [apiStatus, setApiStatus] = useState<string>("checking…");
+  const [semanticStatus, setSemanticStatus] =
+    useState<ApiStatusResponse["semantic_layer"] | null>(null);
+  const { mode: semanticLayerMode, setMode: setSemanticLayerMode } =
+    useSemanticLayerMode(semanticStatus);
 
   useEffect(() => {
     fetch(`${API_URL}/api/status`)
       .then((r) => r.json())
-      .then((data) => setApiStatus(data.status === "ok" ? "connected" : "unknown"))
-      .catch(() => setApiStatus("offline — start the API on port 8000"));
+      .then((data: ApiStatusResponse) => {
+        setApiStatus(data.status === "ok" ? "connected" : "unknown");
+        setSemanticStatus(data.semantic_layer);
+      })
+      .catch(() => {
+        setApiStatus("offline — start the API on port 8000");
+        setSemanticStatus(null);
+      });
   }, []);
 
-  return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="app-header__eyebrow">AI SQL POC · Phase 3</p>
-          <h1>Natural language → Snowflake</h1>
-        </div>
-        <div className="app-header__meta">
-          <span className={`status-pill status-pill--${apiStatus === "connected" ? "ok" : "warn"}`}>
-            API {apiStatus}
-          </span>
-          <span className="status-pill">Nova Pro · TPCH_SF1</span>
-        </div>
-      </header>
-
-      <main className="app-main">
-        <AnalysisWorkspace />
-      </main>
-    </div>
-  );
-}
-
-export default function App() {
-  // Direct AG-UI connection — avoids CopilotKit /info format mismatch (Python SDK returns agents[]).
   const agents = useMemo(
     () => ({
-      [AGENT_ID]: new HttpAgent({
-        url: API_URL,
-        agentId: AGENT_ID,
-        // HttpAgent calls `this.fetch(...)`; unbound global fetch throws in browsers.
-        fetch: (input, init) => fetch(input, init),
-      }),
+      [AGENT_ID]: createSemanticHttpAgent(semanticLayerMode),
     }),
-    [],
+    [semanticLayerMode],
   );
 
   return (
     <CopilotKit
-      // Satisfies CopilotKit validateProps; /copilotkit stub returns empty agents so HttpAgent stays in control.
+      key={semanticLayerMode}
       runtimeUrl={COPILOT_RUNTIME_URL}
       agents__unsafe_dev_only={agents as never}
       agent={AGENT_ID}
-      showDevConsole={import.meta.env.DEV}
     >
       <CopilotSidebar
         defaultOpen
@@ -75,7 +63,32 @@ export default function App() {
           initial: "Ask a question about TPCH_SF1…",
         }}
       >
-        <AppShell />
+        <CopilotToolRenderers />
+        <div className="app-shell">
+          <header className="app-header">
+            <div>
+              <p className="app-header__eyebrow">AI SQL POC · Phase 3</p>
+              <h1>Natural language → Snowflake</h1>
+            </div>
+            <div className="app-header__meta">
+              <SemanticLayerToggle
+                mode={semanticLayerMode}
+                status={semanticStatus}
+                onChange={setSemanticLayerMode}
+              />
+              <span
+                className={`status-pill status-pill--${apiStatus === "connected" ? "ok" : "warn"}`}
+              >
+                API {apiStatus}
+              </span>
+              <span className="status-pill">Nova Pro · TPCH_SF1</span>
+            </div>
+          </header>
+
+          <main className="app-main">
+            <AnalysisWorkspace semanticLayerMode={semanticLayerMode} />
+          </main>
+        </div>
       </CopilotSidebar>
     </CopilotKit>
   );

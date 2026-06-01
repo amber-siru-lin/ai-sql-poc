@@ -10,6 +10,15 @@ config/snowflake_config.py
 credentials.json
 .aws/credentials
 
+# --- Wren ---
+wren/**/target/
+wren/**/.wren/
+.wren/
+# Wren CLI profiles (secrets live in ~/.wren/ or local copies — never commit)
+wren/profiles.yml
+wren/profiles.local.yml
+**/.wren/profiles.yml
+
 # --- Local runtime artifacts ---
 config/working_model.txt
 working_model.txt
@@ -33,6 +42,9 @@ build/
 .ruff_cache/
 .ipynb_checkpoints/
 
+# --- UI local ---
+ui/.vite/
+
 # --- Node (Phase 3) ---
 node_modules/
 ui/node_modules/
@@ -55,3 +67,7 @@ Thumbs.db
 # --- Unrelated local tooling (not part of this POC repo) ---
 .agents/
 .opencode/
+API:
+HA:
+LLM:
+T:

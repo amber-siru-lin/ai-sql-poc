@@ -4,6 +4,12 @@
   gap: 1.25rem;
 }
 
+.analysis-workspace__mode-hint {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted, #475569);
+}
+
 .analysis-workspace__intro {
   background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);
   border: 1px solid var(--border);
