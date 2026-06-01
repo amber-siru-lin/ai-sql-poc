@@ -13,10 +13,10 @@ type Props = {
   threadId: string;
   onSelectSession: (threadId: string) => void;
   onNewChat: () => void;
-  sessions: import("../types/audit").AuditSession[];
-  sessionsLoading: boolean;
-  sessionsError: string | null;
-  onSessionsRefresh: () => void;
+  sessions?: import("../types/audit").AuditSession[];
+  sessionsLoading?: boolean;
+  sessionsError?: string | null;
+  onSessionsRefresh?: () => void;
 };
 
 export function LeftSidebar({
@@ -29,9 +29,9 @@ export function LeftSidebar({
   threadId,
   onSelectSession,
   onNewChat,
-  sessions,
-  sessionsLoading,
-  sessionsError,
+  sessions = [],
+  sessionsLoading = false,
+  sessionsError = null,
   onSessionsRefresh,
 }: Props) {
   const apiOk = apiStatus === "connected";
@@ -100,6 +100,10 @@ export function LeftSidebar({
             activeThreadId={threadId}
             onSelectSession={onSelectSession}
             onNewChat={onNewChat}
+            sessions={sessions}
+            loading={sessionsLoading}
+            error={sessionsError}
+            onRefresh={onSessionsRefresh}
           />
         ) : (
           <>

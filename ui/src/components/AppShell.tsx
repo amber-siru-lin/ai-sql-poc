@@ -30,6 +30,9 @@ type Props = {
   onOpenAuditForThread?: () => void;
   onNewChat: () => void;
   onSessionsChanged: () => void;
+  sessions?: AuditSession[];
+  sessionsLoading?: boolean;
+  sessionsError?: string | null;
 };
 
 export function AppShell({
@@ -46,6 +49,9 @@ export function AppShell({
   onOpenAuditForThread,
   onNewChat,
   onSessionsChanged,
+  sessions = [],
+  sessionsLoading = false,
+  sessionsError = null,
 }: Props) {
   return (
     <div className="app-layout">
@@ -59,6 +65,10 @@ export function AppShell({
         threadId={threadId}
         onSelectSession={onThreadIdChange}
         onNewChat={onNewChat}
+        sessions={sessions}
+        sessionsLoading={sessionsLoading}
+        sessionsError={sessionsError}
+        onSessionsRefresh={onSessionsChanged}
       />
 
       <main className="app-layout__main">

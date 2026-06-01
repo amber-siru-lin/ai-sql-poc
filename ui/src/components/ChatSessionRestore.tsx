@@ -6,6 +6,7 @@ import {
   loadThreadMessages,
   messagesFromAuditEntries,
   saveThreadMessages,
+  toStoredMessages,
 } from "../lib/chatPersistence";
 import type { AuditLogsResponse } from "../types/audit";
 
@@ -45,9 +46,10 @@ export function ChatSessionRestore({ threadId, onSessionsChanged }: Props) {
   }, [threadId, setMessages]);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (messages.length === 0) return;
-    saveThreadMessages(threadId, messages);
+    if (isLoading || !messages?.length) return;
+    const storable = toStoredMessages(messages);
+    if (storable.length === 0) return;
+    saveThreadMessages(threadId, storable);
     if (messages.length > prevCount.current) {
       onSessionsChanged?.();
     }

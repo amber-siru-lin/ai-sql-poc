@@ -107,6 +107,9 @@ export default function App() {
         onOpenAuditForThread={openAuditForThread}
         onNewChat={onNewChat}
         onSessionsChanged={refreshSessions}
+        sessions={sessions}
+        sessionsLoading={sessionsLoading}
+        sessionsError={sessionsError}
       />
     </CopilotKit>
   );
