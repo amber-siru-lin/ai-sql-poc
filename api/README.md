@@ -32,9 +32,13 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 
 | Path | Purpose |
 |------|---------|
-| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) + `checkpoint.backend` + Postgres Docker hint |
-| `GET /api/audit/logs` | Query audit JSONL for UI (`?date=`, `?limit=`, `?thread_id=`, `?source=`) |
-| `GET /api/audit/sessions` | Sessions grouped by `thread_id` (`?source=api` default; use `semantic_editor` for editor history) |
+| `GET /api/status` | UI health badge + `semantic_layer` readiness (wren / cortex) + `checkpoint.backend` + `sessions.available` + Postgres Docker hint |
+| `GET /api/sessions` | SQL chat session list (Postgres `conversations`) — requires `DATABASE_URL` |
+| `POST /api/sessions` | Register a new conversation row (e.g. **+ New** in UI) |
+| `GET /api/sessions/{thread_id}/messages` | SQL chat transcript restore |
+| `PUT /api/sessions/{thread_id}/messages` | Replace-all transcript save on UI flush (POC) |
+| `GET /api/audit/logs` | Query audit JSONL for **Audit log page** (`?date=`, `?limit=`, `?thread_id=`, `?source=`) |
+| `GET /api/audit/sessions` | Audit-derived session list — **editor history** and audit UI; SQL chat uses `/api/sessions` |
 | `POST /` | **NL→SQL AG-UI agent** (`nl2sql_assistant`) — SSE stream |
 | `POST /semantic-agent` | **Editor AG-UI agent** (`semantic_editor`) — SSE stream |
 | `GET /api/semantic/*` | File tree, read/write, validate, GitHub PR draft/create — see [semantic-layer-editor.md](../docs/architecture/semantic-layer-editor.md) |

@@ -6,11 +6,12 @@ Storage is split by layer. **Query audit** (question, SQL, timing, result finger
 
 | Layer | Location | Survives API restart? |
 |-------|----------|------------------------|
-| **LangGraph checkpointer** | `MemorySaver()` in `src/agent_factory.py` — state keyed by `thread_id` in the uvicorn process | **No** |
-| **UI thread id** | `localStorage` key `ai-sql-poc-thread-id` + CopilotKit / AG-UI `threadId` on each run | Survives browser refresh; server state still lost on restart |
-| **UI chat snapshots** | `localStorage` key `ai-sql-poc-chat-snapshots` (up to 80 msgs/thread) — see [chat-memory-and-sessions.md](chat-memory-and-sessions.md) | Survives refresh and session switches in **this browser** |
-| **Chat history (sidebar)** | `GET /api/audit/sessions` — threads grouped from audit log | Survives API restart; restore quality depends on snapshot vs audit fallback |
-| **Clear conversation** | UI assigns a new `thread_id` and resets chat messages | Old server checkpoint remains in RAM until process exit |
+| **LangGraph checkpointer** | `AsyncPostgresSaver` when `DATABASE_URL` set; else `MemorySaver()` in `src/agent_factory.py` | **Yes** with Postgres + Docker; **no** with MemorySaver only |
+| **UI thread id** | `localStorage` key `ai-sql-poc-thread-id` + AG-UI `threadId` on each run | Survives browser refresh |
+| **Chat transcript (UX)** | Postgres `conversations` + `messages` via `GET/PUT /api/sessions/{id}/messages` | **Yes** (when `DATABASE_URL` set) |
+| **Chat history (sidebar)** | `GET /api/sessions` — Postgres session list | **Yes** (when Postgres sessions store available) |
+| **Server append on run** | `append_run_turn` in `src/chat_sessions/store.py` after each agent run | **Yes** — idempotent by `run_id` |
+| **Clear conversation** | UI assigns a new `thread_id` and resets chat messages | Old checkpoint + Postgres rows remain until retention |
 
 AG-UI passes `thread_id` from the browser agent into `SemanticLayerLangGraphAgent` (`src/ag_ui_agent.py`) → `config.configurable.thread_id` for retry policy and checkpointing.
 
@@ -28,6 +29,26 @@ AG-UI passes `thread_id` from the browser agent into `SemanticLayerLangGraphAgen
 | Tool | `wren_memory_fetch` in `src/tools/wren_tools.py` |
 
 This is **separate** from LangGraph chat memory: it recalls past verified questions/SQL for Wren mode, not full chat transcripts.
+
+### Future: Postgres + pgvector (optional replacement for Wren memory)
+
+**[pgvector](https://github.com/pgvector/pgvector)** is a Postgres extension for **vector similarity search** (embeddings). It solves a different problem than `conversations` / `messages`:
+
+| | Chat tables (3.6.2) | pgvector semantic examples (future) |
+|---|---------------------|-------------------------------------|
+| **Question** | “What did we say in this thread?” | “What **similar** past questions had good SQL?” |
+| **Query** | By `thread_id`, ordered | By embedding distance |
+| **Data** | Full transcript | Curated question + SQL pairs |
+
+**Not in scope for Phase 3.6.** When/if we drop Wren’s LanceDB index (`wren/tpch/target/`), a plausible path is:
+
+1. Store **verified** NL↔SQL pairs in Postgres (not raw chat noise).
+2. Enable **pgvector** on the same database as checkpoints + sessions.
+3. Replace `wren memory fetch` with an app tool that queries similar examples by embedding.
+
+CTA production shape aligns with this (Aurora pgvector for schema metadata + example queries). Wren memory remains the POC default while Wren mode is active.
+
+See [chat-memory-and-sessions.md](chat-memory-and-sessions.md) roadmap.
 
 ## What runs on Snowflake
 

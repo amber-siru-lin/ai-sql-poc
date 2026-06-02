@@ -248,3 +248,135 @@ async def replace_messages(
                 )
 
     return len(capped)
+
+
+def _assistant_content_from_run(
+    *,
+    assistant_reply: str | None,
+    sql_executions: list[dict[str, Any]] | None,
+    status: str,
+    error: str | None,
+) -> str | None:
+    if assistant_reply and assistant_reply.strip():
+        return assistant_reply.strip()
+    parts: list[str] = []
+    if error:
+        parts.append(f"**Error:** {error}")
+    for step in sql_executions or []:
+        sql = step.get("sql")
+        if sql:
+            parts.append(f"```sql\n{sql}\n```")
+        if step.get("error"):
+            parts.append(f"**SQL error:** {step['error']}")
+        elif step.get("result_preview"):
+            parts.append(str(step["result_preview"]))
+    if parts:
+        return "\n\n".join(parts)
+    if status == "error":
+        return "Run failed."
+    return None
+
+
+async def append_run_turn(
+    thread_id: str,
+    *,
+    run_id: str,
+    question: str | None,
+    assistant_reply: str | None = None,
+    semantic_layer: str | None = None,
+    sql_executions: list[dict[str, Any]] | None = None,
+    status: str = "ok",
+    error: str | None = None,
+    user_id: str = DEFAULT_USER_ID,
+) -> int:
+    """Append one user/assistant pair after an API agent run (idempotent by run_id)."""
+    if not question and not assistant_reply:
+        assistant_reply = _assistant_content_from_run(
+            assistant_reply=assistant_reply,
+            sql_executions=sql_executions,
+            status=status,
+            error=error,
+        )
+    if not question and not assistant_reply:
+        return 0
+
+    tid = _parse_thread_id(thread_id)
+    user_mid = _parse_message_id(f"{run_id}-user")
+    asst_mid = _parse_message_id(f"{run_id}-assistant")
+    pool = _require_pool()
+
+    async with pool.connection() as conn:
+        async with conn.transaction():
+            cur = await conn.execute(
+                "SELECT id FROM messages WHERE thread_id = %s AND id = %s",
+                (tid, user_mid),
+            )
+            if await cur.fetchone() is not None:
+                return 0
+
+            cur = await conn.execute(
+                "SELECT COALESCE(MAX(seq), -1) AS max_seq FROM messages WHERE thread_id = %s",
+                (tid,),
+            )
+            row = await cur.fetchone()
+            next_seq = int(row["max_seq"]) + 1
+
+            to_insert: list[tuple[Any, ...]] = []
+            title = "New chat"
+            if question and question.strip():
+                title = _title_from_messages([{"role": "user", "content": question}])
+                to_insert.append((user_mid, tid, "user", question.strip(), next_seq))
+                next_seq += 1
+
+            assistant_content = _assistant_content_from_run(
+                assistant_reply=assistant_reply,
+                sql_executions=sql_executions,
+                status=status,
+                error=error,
+            )
+            if assistant_content:
+                to_insert.append((asst_mid, tid, "assistant", assistant_content, next_seq))
+
+            if not to_insert:
+                return 0
+
+            await conn.execute(
+                """
+                INSERT INTO conversations (thread_id, user_id, title, semantic_layer, updated_at)
+                VALUES (%s, %s, %s, %s, NOW())
+                ON CONFLICT (thread_id) DO UPDATE SET
+                  title = CASE
+                    WHEN EXCLUDED.title != 'New chat' THEN EXCLUDED.title
+                    ELSE conversations.title
+                  END,
+                  semantic_layer = COALESCE(EXCLUDED.semantic_layer, conversations.semantic_layer),
+                  updated_at = NOW()
+                """,
+                (tid, user_id, title, semantic_layer),
+            )
+
+            for mid, thread_uuid, role, content, seq in to_insert:
+                await conn.execute(
+                    """
+                    INSERT INTO messages (id, thread_id, role, content, seq)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (thread_id, id) DO NOTHING
+                    """,
+                    (mid, thread_uuid, role, content, seq),
+                )
+
+            await conn.execute(
+                """
+                DELETE FROM messages AS m
+                USING (
+                  SELECT id FROM messages
+                  WHERE thread_id = %s
+                  ORDER BY seq DESC
+                  OFFSET %s
+                ) AS old
+                WHERE m.id = old.id
+                """,
+                (tid, MAX_MESSAGES_PER_THREAD),
+            )
+
+    return len(to_insert)

@@ -30,8 +30,8 @@ import { useSemanticLayerMode } from "./hooks/useSemanticLayerMode";
 import { createEditorHttpAgent, type EditorAgentContext } from "./lib/editorHttpAgent";
 import { createSemanticHttpAgent } from "./lib/httpAgent";
 import {
-  backfillLocalSnapshotsToApi,
   createSessionOnApi,
+  migrateLocalSnapshotsOnce,
   setSessionsAvailableFromStatus,
 } from "./lib/sessionApi";
 
@@ -161,7 +161,7 @@ export default function App() {
         setPostgresStatus(data.postgres ?? null);
         setSessionsAvailableFromStatus(data.sessions ?? null);
         if (data.sessions?.available) {
-          void backfillLocalSnapshotsToApi();
+          void migrateLocalSnapshotsOnce();
         }
       })
       .catch(() => {

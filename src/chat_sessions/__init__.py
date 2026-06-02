@@ -1,6 +1,7 @@
 """Chat sessions API store (Phase 3.6.2)."""
 
 from src.chat_sessions.store import (
+    append_run_turn,
     conversation_exists,
     create_session,
     get_messages,
@@ -12,6 +13,7 @@ from src.chat_sessions.store import (
 )
 
 __all__ = [
+    "append_run_turn",
     "conversation_exists",
     "create_session",
     "get_messages",

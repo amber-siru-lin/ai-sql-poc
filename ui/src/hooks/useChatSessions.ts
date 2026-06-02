@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { API_URL } from "../config";
-import { fetchSessionsFromApi } from "../lib/sessionApi";
-import type { AuditSession, AuditSessionsResponse } from "../types/audit";
+import { fetchSessionsFromApi, isSessionsApiAvailable } from "../lib/sessionApi";
+import type { AuditSession } from "../types/audit";
 
-async function fetchAuditSessions(limit: number): Promise<AuditSession[]> {
-  const res = await fetch(`${API_URL}/api/audit/sessions?limit=${limit}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = (await res.json()) as AuditSessionsResponse;
-  return json.sessions ?? [];
-}
+const SESSIONS_UNAVAILABLE =
+  "Chat history requires Postgres — run docker compose up -d and set DATABASE_URL, then restart the API.";
 
 export function useChatSessions() {
   const [sessions, setSessions] = useState<AuditSession[]>([]);
@@ -25,7 +20,12 @@ export function useChatSessions() {
         setSessions(fromApi);
         return;
       }
-      setSessions(await fetchAuditSessions(40));
+      setSessions([]);
+      if (!isSessionsApiAvailable()) {
+        setError(SESSIONS_UNAVAILABLE);
+      } else {
+        setError("Failed to load sessions from Postgres");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load sessions");
       setSessions([]);

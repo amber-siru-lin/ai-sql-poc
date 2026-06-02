@@ -3,6 +3,8 @@ import type { AuditSession } from "../types/audit";
 import type { StoredChatMessage } from "./chatPersistence";
 
 const SEMANTIC_LAYER_KEY = "ai-sql-poc-semantic-layer";
+const SNAPSHOTS_KEY = "ai-sql-poc-chat-snapshots";
+const MIGRATION_KEY = "ai-sql-poc-snapshots-migrated-v1";
 
 export type SessionsStatus = {
   backend: string;
@@ -78,7 +80,6 @@ export async function fetchMessagesFromApi(
       `${API_URL}/api/sessions/${encodeURIComponent(threadId)}/messages`,
     );
     if (res.status === 503) return null;
-    if (res.status === 404) return [];
     if (!res.ok) return null;
     const json = (await res.json()) as SessionMessagesResponse;
     return json.messages ?? [];
@@ -111,21 +112,26 @@ export async function saveMessagesToApi(
   }
 }
 
-/** Push all localStorage snapshots to Postgres when API is available. */
-export async function backfillLocalSnapshotsToApi(): Promise<void> {
+/** One-time migration: push legacy localStorage snapshots to Postgres, then delete them. */
+export async function migrateLocalSnapshotsOnce(): Promise<void> {
   if (!isSessionsApiAvailable()) return;
-  const raw = localStorage.getItem("ai-sql-poc-chat-snapshots");
-  if (!raw) return;
-  let store: Record<string, StoredChatMessage[]>;
-  try {
-    store = JSON.parse(raw) as Record<string, StoredChatMessage[]>;
-  } catch {
-    return;
+  if (localStorage.getItem(MIGRATION_KEY)) return;
+
+  const raw = localStorage.getItem(SNAPSHOTS_KEY);
+  if (raw) {
+    try {
+      const store = JSON.parse(raw) as Record<string, StoredChatMessage[]>;
+      const entries = Object.entries(store).filter(
+        ([, msgs]) => Array.isArray(msgs) && msgs.length > 0,
+      );
+      await Promise.all(
+        entries.map(([threadId, messages]) => saveMessagesToApi(threadId, messages)),
+      );
+    } catch {
+      // Ignore corrupt snapshot blob.
+    }
+    localStorage.removeItem(SNAPSHOTS_KEY);
   }
-  const entries = Object.entries(store).filter(
-    ([, msgs]) => Array.isArray(msgs) && msgs.length > 0,
-  );
-  await Promise.all(
-    entries.map(([threadId, messages]) => saveMessagesToApi(threadId, messages)),
-  );
+
+  localStorage.setItem(MIGRATION_KEY, "1");
 }
