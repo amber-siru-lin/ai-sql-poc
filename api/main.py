@@ -39,6 +39,8 @@ from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
 from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.checkpoint_factory import checkpoint_backend, init_checkpointer_from_env, shutdown_checkpointer
+from src.chat_sessions.routes import router as chat_sessions_router
+from src.chat_sessions.store import init_chat_sessions_from_env, sessions_available, shutdown_chat_sessions
 from src.check_setup import check_all
 from src.postgres_docker_status import postgres_docker_status
 from src.semantic_editor.ag_ui_agent import SemanticEditorLangGraphAgent
@@ -83,6 +85,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(chat_sessions_router)
 
 
 def _semantic_layer_status() -> dict:
@@ -235,6 +239,10 @@ def status():
             "backend": checkpoint_backend(),
             "database_url_configured": bool(os.environ.get("DATABASE_URL", "").strip()),
         },
+        "sessions": {
+            "backend": "postgres" if sessions_available() else "memory",
+            "available": sessions_available(),
+        },
     }
 
 
@@ -268,6 +276,7 @@ async def copilotkit_single_endpoint(body: CopilotKitMethodRequest):
 async def startup() -> None:
     check_all()
     await init_checkpointer_from_env()
+    await init_chat_sessions_from_env()
     from src.checkpoint_factory import get_checkpointer
 
     graph = build_agent_graph(DEFAULT_SEMANTIC_LAYER, checkpointer=get_checkpointer())
@@ -289,4 +298,5 @@ async def startup() -> None:
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
+    await shutdown_chat_sessions()
     await shutdown_checkpointer()

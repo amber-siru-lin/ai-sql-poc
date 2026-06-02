@@ -19,6 +19,43 @@ from src.semantic_layer.types import normalize_semantic_layer
 logger = logging.getLogger(__name__)
 
 
+async def _persist_run_to_postgres(
+    *,
+    thread_id: str,
+    run_id: str,
+    semantic_layer: str,
+    question: str | None,
+    status: str,
+    error: str | None,
+    assistant_reply: str | None,
+    sql_executions: list | None,
+) -> None:
+    from src.chat_sessions.store import append_run_turn, sessions_available
+
+    if not sessions_available():
+        return
+    try:
+        added = await append_run_turn(
+            thread_id,
+            run_id=run_id,
+            question=question,
+            assistant_reply=assistant_reply,
+            semantic_layer=semantic_layer,
+            sql_executions=sql_executions,
+            status=status,
+            error=error,
+        )
+        if added:
+            logger.info(
+                "session append run_id=%s thread_id=%s messages=%s",
+                run_id,
+                thread_id,
+                added,
+            )
+    except Exception:
+        logger.exception("session append failed for run_id=%s", run_id)
+
+
 def _semantic_layer_from_forwarded(forwarded: dict) -> str:
     """UI sends camelCase ``semanticLayer``; accept snake_case too."""
     raw = forwarded.get("semantic_layer")
@@ -93,5 +130,15 @@ class SemanticLayerLangGraphAgent(LangGraphAgent):
                     destinations.get("local_path"),
                     destinations.get("s3_uri"),
                 )
+                await _persist_run_to_postgres(
+                    thread_id=thread_id,
+                    run_id=run_id,
+                    semantic_layer=semantic_layer,
+                    question=question,
+                    status=status,
+                    error=error,
+                    assistant_reply=record.get("assistant_reply"),
+                    sql_executions=record.get("sql_executions"),
+                )
             except Exception:
-                logger.exception("audit logging failed for run_id=%s", run_id)
+                logger.exception("post-run persist failed for run_id=%s", run_id)

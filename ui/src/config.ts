@@ -55,6 +55,10 @@ export type ApiStatusResponse = {
   semantic_layer: SemanticLayerStatus;
   audit?: AuditConfig;
   postgres?: PostgresDockerStatus;
+  sessions?: {
+    backend: string;
+    available: boolean;
+  };
 };
 
 export type AppView = "chat" | "audit" | "semantic";

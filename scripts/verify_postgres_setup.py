@@ -48,17 +48,19 @@ def main() -> int:
                     """
                     SELECT tablename FROM pg_tables
                     WHERE schemaname = 'public'
-                      AND tablename LIKE 'checkpoint%'
+                      AND tablename IN (
+                        'checkpoints', 'conversations', 'messages'
+                      )
                     ORDER BY tablename
                     """
                 )
                 tables = [row[0] for row in cur.fetchall()]
                 if tables:
-                    print(f"LangGraph checkpoint tables: {', '.join(tables)}")
+                    print(f"Postgres tables: {', '.join(tables)}")
                 else:
                     print(
-                        "No checkpoint tables yet — start the API once "
-                        "(uvicorn api.main:app) to run checkpointer.setup()."
+                        "No app tables yet — start the API once "
+                        "(uvicorn api.main:app) to run schema setup."
                     )
     except Exception as exc:
         print(f"Postgres check failed: {exc}")

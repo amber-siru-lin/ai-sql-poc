@@ -36,7 +36,7 @@ type Props = {
 const VARIANT_COPY = {
   chat: {
     title: "Chat history",
-    empty: "No sessions yet. Ask a question — each run is saved to the audit log.",
+    empty: "No sessions yet. Click + New or ask a question — history is saved in Postgres.",
     newTitle: "Start a new conversation",
   },
   editor: {

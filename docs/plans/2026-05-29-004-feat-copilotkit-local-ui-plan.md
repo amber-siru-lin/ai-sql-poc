@@ -168,28 +168,29 @@ Options (pick one when ready):
 
 Not in scope until local path works.
 
-### Phase 3.6 — Durable chat memory & sessions (next)
+### Phase 3.6 — Durable chat memory & sessions
+
+**Master roadmap:** [2026-06-01-008-feat-memory-architecture-roadmap-plan.md](./2026-06-01-008-feat-memory-architecture-roadmap-plan.md) (memory types, CopilotKit rules, PR sequence).
 
 Apply production patterns incrementally while staying local-first. Full context: [chat-memory-and-sessions.md](../architecture/chat-memory-and-sessions.md).
 
-| Step | What | Why | Suggested approach |
-|------|------|-----|-------------------|
-| **3.6.1** | **LangGraph Postgres checkpointer** | Follow-ups survive API restart | `docker compose up -d` + `DATABASE_URL` → `PostgresSaver` in `checkpoint_factory.py` — [postgres-local-dev.md](../architecture/postgres-local-dev.md) |
-| **3.6.2** | **Server-side sessions API** | Cross-device history, source of truth for sidebar | Postgres tables `conversations` + `messages`; `GET/POST /api/sessions`, `GET /api/sessions/{id}/messages` |
-| **3.6.3** | **Stop deriving UX from audit alone** | Audit is per-run, not a transcript | Write messages to DB on each turn; keep S3 audit for compliance |
-| **3.6.4** | **User / tenant scoping** | Prevent cross-user thread leakage | Auth stub → `user_id` on sessions; filter all reads/writes |
-| **3.6.5** | **Context window strategy** | Long threads exceed model limits | Summarize older turns or retrieve last N + relevant audit SQL |
-| **3.6.6** | **Browser cache as optional** | localStorage is a cache, not authority | UI loads from API first; fall back to localStorage offline |
+| Step | What | Why | Status |
+|------|------|-----|--------|
+| **3.6.1** | LangGraph Postgres checkpointer | Follow-ups survive API restart | ✅ Code — [postgres-local-dev.md](../architecture/postgres-local-dev.md) |
+| **3.6.2** | Server-side sessions API | Source of truth for sidebar + transcript | ✅ [PR #14](https://github.com/amber-siru-lin/ai-sql-poc/pull/14) |
+| **3.6.3** | **Audit out of chat UX** | S3 → Audit log page only | ✅ Done (PR #14) |
+| **3.6.6** | **Postgres-only chat path** | Drop localStorage authority | ✅ Done (PR #14) |
+| **3.6.3b** | Server-side message write on agent run | Postgres even if UI flush fails | ✅ Done (PR #14) |
+| **3.6.4** | User / tenant scoping | `user_id` on sessions | Planned |
+| **3.6.5** | Context window / summaries | Long threads | Planned |
+| **3.6.7** | Append-only message API | Pre-production (replace replace-all PUT) | Planned |
+| **3.7** | pgvector semantic examples | Optional Wren memory replacement | Long-term |
 
-**Recommended stack for this repo (POC → MVP):**
+**Target stack:** Postgres (checkpoints + chat + future pgvector) · S3 audit (compliance page only) · Wren LanceDB until 3.7.
 
-1. **Postgres** (Docker Compose) — one database for LangGraph checkpoints + app sessions/messages.
-2. Keep **S3 audit** as-is for query compliance.
-3. Keep **Wren memory** separate (semantic recall, not chat).
+**CopilotKit:** self-hosted HttpAgent + Postgres sessions — no Cloud thread sync. Invariants: [session learnings](../solutions/chat-memory-and-session-learnings.md).
 
-**Out of scope for 3.6:** Aurora pgvector for RAG (CTA Layer 5), multi-user auth productization, CopilotKit Cloud thread sync.
-
-**Done in POC (Jun 2026):** sidebar session list from audit, browser snapshots, `ChatPane` thread bootstrap — see [chat-memory-and-sessions.md](../architecture/chat-memory-and-sessions.md).
+**Done in POC (Jun 2026):** session switch (PR #11), Postgres sessions API + Postgres-only chat path + server-side append (PR #14).
 
 ---
 

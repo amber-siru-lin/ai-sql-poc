@@ -1,4 +1,5 @@
 import type { AuditLogEntry } from "../types/audit";
+import { saveMessagesToApi } from "./sessionApi";
 
 /** Minimal shape CopilotKit accepts via setMessages. */
 export type StoredChatMessage = {
@@ -7,36 +8,7 @@ export type StoredChatMessage = {
   content: string;
 };
 
-const STORAGE_KEY = "ai-sql-poc-chat-snapshots";
-
-type SnapshotStore = Record<string, StoredChatMessage[]>;
-
-function readStore(): SnapshotStore {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as SnapshotStore;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeStore(store: SnapshotStore): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {
-    // Quota exceeded or private mode — ignore.
-  }
-}
-
-export function loadThreadMessages(threadId: string): StoredChatMessage[] {
-  const store = readStore();
-  const messages = store[threadId];
-  return Array.isArray(messages) ? messages : [];
-}
-
-/** Serialize CopilotKit messages for localStorage. */
+/** Serialize CopilotKit messages for Postgres PUT flush. */
 export function toStoredMessages(messages: unknown): StoredChatMessage[] {
   if (!Array.isArray(messages)) return [];
   const stored: StoredChatMessage[] = [];
@@ -120,15 +92,11 @@ export function applyThreadTranscript(
 
 export function saveThreadMessages(threadId: string, messages: StoredChatMessage[]): void {
   if (messages.length === 0) return;
-  const store = readStore();
-  store[threadId] = messages.slice(-80);
-  writeStore(store);
+  void saveMessagesToApi(threadId, messages.slice(-80));
 }
 
-export function clearThreadMessages(threadId: string): void {
-  const store = readStore();
-  delete store[threadId];
-  writeStore(store);
+export function clearThreadMessages(_threadId: string): void {
+  // Chat authority is Postgres only (Phase 3.6.6).
 }
 
 function assistantContentFromAudit(entry: AuditLogEntry): string {

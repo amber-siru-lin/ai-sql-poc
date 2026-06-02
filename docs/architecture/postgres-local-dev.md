@@ -98,6 +98,9 @@ On first startup with `DATABASE_URL` set, LangGraph runs `checkpointer.setup()` 
 scripts/py scripts/verify_postgres_setup.py
 curl -s http://localhost:8000/api/status | jq '.checkpoint'
 # → { "backend": "postgres", "database_url_configured": true }
+curl -s http://localhost:8000/api/status | jq '.sessions'
+# → { "backend": "postgres", "available": true }
+curl -s http://localhost:8000/api/sessions | jq '.sessions | length'
 ```
 
 ---
@@ -159,12 +162,16 @@ Override compose defaults by exporting vars before `docker compose up`, or use a
 
 ---
 
-## Next steps (Phase 3.6.2+)
+## Next steps (Phase 3.6)
 
-- Add `conversations` and `messages` tables in the same database
-- `GET /api/sessions`, `GET /api/sessions/{id}/messages`
-- UI loads transcript from API first; localStorage becomes optional cache
-- Keep S3 audit separate for compliance
+- **Done (3.6.2):** `conversations` + `messages` tables, `GET/POST /api/sessions`, `GET/PUT /api/sessions/{id}/messages`
+- **Done (3.6.3 / 3.6.6):** SQL chat UX reads Postgres only — no audit or localStorage fallback for sidebar/restore
+- **Done (3.6.3b):** `append_run_turn` writes user/assistant pair after each agent run (idempotent by `run_id`)
+- One-time migration: legacy `localStorage` snapshots pushed on startup via `migrateLocalSnapshotsOnce()`
+- Server-side backfill from audit (one-time ops): `scripts/py scripts/backfill_chat_sessions_from_audit.py`
+- Keep S3 audit separate for compliance (Audit log page only)
+- **Before production:** replace-all PUT → append-only writes — see [plan Phase 3.6.2](../plans/2026-06-01-007-feat-postgres-sessions-api-plan.md#before-production--change-these-poc-shortcuts)
+- **Later (not chat):** optional **pgvector** in the same Postgres DB for semantic NL↔SQL recall — future replacement for Wren LanceDB memory; see [query-and-memory-storage.md § pgvector](../architecture/query-and-memory-storage.md#future-postgres--pgvector-optional-replacement-for-wren-memory)
 
 See [CopilotKit plan Phase 3.6](../plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md).
 

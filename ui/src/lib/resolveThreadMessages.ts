@@ -1,18 +1,13 @@
-import { fetchAuditMessagesForThread } from "./fetchAuditMessages";
-import { loadThreadMessages, mergeLocalAndAuditTranscripts, type StoredChatMessage } from "./chatPersistence";
+import type { StoredChatMessage } from "./chatPersistence";
+import { fetchMessagesFromApi } from "./sessionApi";
 
-/** Load chat transcript for a thread: merge browser snapshot with audit fallback. */
+/** Load SQL chat transcript from Postgres only (Phase 3.6.3 / 3.6.6). */
 export async function resolveThreadMessages(
   threadId: string,
 ): Promise<StoredChatMessage[]> {
-  const local = loadThreadMessages(threadId);
-  let audit: StoredChatMessage[] = [];
-  try {
-    audit = await fetchAuditMessagesForThread(threadId);
-  } catch {
-    audit = [];
+  const fromApi = await fetchMessagesFromApi(threadId);
+  if (fromApi == null) {
+    return [];
   }
-  if (local.length === 0) return audit;
-  if (audit.length === 0) return local;
-  return mergeLocalAndAuditTranscripts(local, audit);
+  return fromApi;
 }
