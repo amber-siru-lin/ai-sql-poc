@@ -38,7 +38,9 @@ def wren_ready() -> tuple[bool, str]:
     if not wren_cli_available():
         return False, "wren CLI not on PATH (pip install 'wrenai[snowflake,memory]')"
     if not MDL_MANIFEST.is_file():
-        return False, "MDL not built — run: cd wren/tpch && wren context build"
+        return False, (
+            "MDL not built — restart API (auto-build) or: cd wren/tpch && wren context build"
+        )
     return True, "ok"
 
 

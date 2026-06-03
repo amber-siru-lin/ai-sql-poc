@@ -195,7 +195,8 @@ cd ui && npm install && cd ..
 export AWS_PROFILE=Brainfore-Team-Set-654654461736
 aws sso login --profile $AWS_PROFILE
 scripts/py scripts/sync_wren_profile.py   # once, for Wren mode
-cd wren/tpch && wren context build && wren memory index   # once, for Wren mode
+# Wren MDL: built automatically on API startup if missing (see wren/tpch/README.md)
+# Manual: cd wren/tpch && wren context build && wren memory index
 scripts/py -m uvicorn api.main:app --reload --port 8000
 
 # Terminal 2 — UI

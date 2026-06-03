@@ -1,0 +1,47 @@
+.placeholder-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.placeholder-panel__header {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+}
+
+.placeholder-panel__header h2 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.placeholder-panel__badge {
+  background: var(--surface-elevated);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  text-transform: uppercase;
+}
+
+.placeholder-panel__body {
+  color: var(--muted);
+  flex: 1;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  padding: 0.65rem 0.75rem;
+}
+
+.placeholder-panel__hint {
+  margin: 0;
+}

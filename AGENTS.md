@@ -15,6 +15,8 @@ scripts/py -m uvicorn api.main:app --reload --port 8000
 
 Verify: `curl -s http://localhost:8000/api/status` → `"status": "ok"`.
 
+**Wren (Semantics → Wren):** On local API startup, if `wren` is on PATH and `target/mdl.json` is missing, the API runs `sync_wren_profile.py` + `wren context build` automatically. Requires `config/snowflake_config.py` and `pip install "wrenai[snowflake,memory]"`. Set `WREN_SKIP_BOOTSTRAP=1` to disable. See [wren/tpch/README.md](wren/tpch/README.md).
+
 For UI changes, restart Vite when needed:
 
 ```bash

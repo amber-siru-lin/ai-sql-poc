@@ -21,7 +21,7 @@ npm run dev
 
 Open http://localhost:5173/
 
-**Wren mode:** API `/api/status` must show `wren_ready: true`. From repo root: `scripts/py scripts/sync_wren_profile.py`, then `cd wren/tpch && wren context build && wren memory index`. Toggle **Semantics → Wren** in the left sidebar (starts a new LangGraph thread when the mode changes).
+**Wren mode:** API `/api/status` must show `wren_ready: true`. Local API startup runs `sync_wren_profile.py` + `wren context build` when `target/mdl.json` is missing (needs `wren` on PATH + `config/snowflake_config.py`). Optional: `wren memory index` or `WREN_BOOTSTRAP_MEMORY_INDEX=1`. See [wren/tpch/README.md](../wren/tpch/README.md). Toggle **Semantics → Wren** in the left sidebar (starts a new LangGraph thread when the mode changes).
 
 ## App views
 

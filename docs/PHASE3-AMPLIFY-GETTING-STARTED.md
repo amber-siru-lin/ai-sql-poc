@@ -4,11 +4,11 @@ Use this guide with your **company account** (`654654461736`) and SSO profile **
 
 The old simple plan (`2026-05-28-002`) shows **Amplify Gen 1** (`amplify init`). Use **Amplify Gen 2** instead (`npm create amplify@latest`, `npx ampx sandbox`).
 
-**Status (May 2026):** **PARKED** — `web/` scaffold exists but sandbox is blocked (CDK bootstrap). Active Phase 3 path is **CopilotKit + local FastAPI** in `ui/` + `api/`.
+**Status (June 2026):** **Active** — `web/` CopilotKit port + Lambda API spike. Local reference remains **`ui/` + `api/`**.
 
 | Track | Folder | Status |
 |-------|--------|--------|
-| Amplify Gen 2 (AWS deploy) | `web/` | Parked — [blocker doc](solutions/aws-amplify-cdk-bootstrap-blocked.md) |
+| Amplify Gen 2 (AWS deploy) | `web/` | **Active** — [mission plan](plans/2026-06-02-007-feat-amplify-copilotkit-port-plan.md), [deploy kit](../deploy/clients/README.md), [path to production](deploy/path-to-production.md) |
 | CopilotKit (local UI) | `ui/` + `api/` | **Active** — [plan](plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md) |
 
 ---

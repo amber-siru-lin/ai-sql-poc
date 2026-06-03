@@ -1,0 +1,33 @@
+.chat-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.chat-pane__loading {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--muted);
+  display: flex;
+  font-size: 0.85rem;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 2;
+}
+
+.chat-pane--loading {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.85rem;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.chat-pane .app-chat {
+  flex: 1;
+  min-height: 0;
+}

@@ -1,30 +1,39 @@
-# web/ — Amplify Gen 2 (parked)
+# web/ — Amplify Gen 2 + CopilotKit (NL→SQL)
 
-This folder holds an **Amplify Gen 2 + Vite** scaffold created for Phase 3. It is **not the active development path**.
+Hosts the **portable** NL→SQL UI (from `ui/`) and Amplify backend (`amplify/`).
 
-## Status: blocked
+## Status
 
-Sandbox deploy requires **CDK bootstrap** in account `654654461736` / `us-east-1`. Bootstrap is blocked by a stuck `CDKToolkit` CloudFormation stack (`DELETE_FAILED`) and insufficient admin permissions on `Brainfore-Team-Set`.
+| Piece | State |
+|-------|--------|
+| CDK bootstrap + `ampx sandbox` | Working in dev account (see deploy kit) |
+| CopilotKit UI in `web/src` | Ported from `ui/` |
+| API on Lambda | Docker image spike (`api/lambda_spike.py`); full agent = Unit 7 |
+| Amplify Hosting console build | May need admin for `iam:CreateRole` — use `npm run dev` until fixed |
 
-**Do not delete this folder** — it may be useful when IT unblocks bootstrap.
+Reference implementation remains **`ui/` + `api/`** on ports 5173/8000.
 
-## Learnings & unblock steps
-
-See:
-
-- [docs/solutions/aws-amplify-cdk-bootstrap-blocked.md](../docs/solutions/aws-amplify-cdk-bootstrap-blocked.md)
-- [docs/PHASE3-AMPLIFY-GETTING-STARTED.md](../docs/PHASE3-AMPLIFY-GETTING-STARTED.md)
-
-## Active Phase 3 path
-
-CopilotKit local UI — see [docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md](../docs/plans/2026-05-29-004-feat-copilotkit-local-ui-plan.md).
-
-New code goes in **`ui/`** (React) and **`api/`** (FastAPI), not here.
-
-## If sandbox is unblocked later
+## Local dev (UI + cloud API)
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws sso login --profile $AWS_PROFILE
-NODE_OPTIONS="--no-webstorage" npx ampx sandbox --profile $AWS_PROFILE
+export AWS_PROFILE=your-profile
+aws sso login --profile "$AWS_PROFILE"
+
+cd web
+npm ci
+cp .env.example .env.local
+# Set VITE_API_URL to sandbox Function URL after deploy
+
+NODE_OPTIONS="--no-webstorage" npx ampx sandbox --profile "$AWS_PROFILE"
+npm run dev -- --host 127.0.0.1 --port 5174
 ```
+
+## Local dev (UI + local API)
+
+Point `.env.local` at localhost and run repo-root `api/` on port 8000 (same as `ui/`).
+
+## Docs
+
+- [deploy/clients/README.md](../deploy/clients/README.md)
+- [docs/plans/2026-06-02-007-feat-amplify-copilotkit-port-plan.md](../docs/plans/2026-06-02-007-feat-amplify-copilotkit-port-plan.md)
+- [docs/guides/novice-aws-amplify-and-this-poc.md](../docs/guides/novice-aws-amplify-and-this-poc.md)

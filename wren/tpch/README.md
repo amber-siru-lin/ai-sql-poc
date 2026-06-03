@@ -2,15 +2,31 @@
 
 Used when CopilotKit **Semantics → Wren** is enabled.
 
-## One-time setup
+## Setup
+
+### Prerequisites (once per machine)
 
 ```bash
 # From repo root
 scripts/py -m pip install "wrenai[snowflake,memory]" pyyaml
+cp config/snowflake_config.example.py config/snowflake_config.py   # if needed
+```
 
-# Reuse repo Snowflake credentials → ~/.wren/profiles.yml (gitignored)
+### Automatic (local API startup)
+
+When you start **`api.main`** (uvicorn on port 8000), the API will:
+
+1. Run `scripts/sync_wren_profile.py` (Snowflake → `~/.wren/profiles.yml`)
+2. Run `wren context set-profile tpch-sf1` and `wren context build` if `target/mdl.json` is missing
+
+Skip with `WREN_SKIP_BOOTSTRAP=1`. Optional memory index: `WREN_BOOTSTRAP_MEMORY_INDEX=1`.
+
+**Lambda** does not bundle `wren/` — Wren stays off in cloud until MDL is built in the image or a separate job.
+
+### Manual (first time or after MDL edits)
+
+```bash
 scripts/py scripts/sync_wren_profile.py
-
 cd wren/tpch
 wren context set-profile tpch-sf1
 
@@ -19,7 +35,7 @@ wren context upgrade   # sets schema_version: 3 so models/*/metadata.yml are loa
 
 wren context validate
 wren context build
-wren memory index
+wren memory index    # optional; or WREN_BOOTSTRAP_MEMORY_INDEX=1 on next API start
 ```
 
 After `wren context build`, `target/mdl.json` exists and `/api/status` reports `wren_ready: true`.
