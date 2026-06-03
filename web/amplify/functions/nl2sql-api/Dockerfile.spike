@@ -1,0 +1,13 @@
+# Minimal spike image (Unit 2 verify). Full agent: Dockerfile
+FROM public.ecr.aws/lambda/python:3.12
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+RUN pip install --no-cache-dir mangum uvicorn fastapi pydantic
+
+COPY api/lambda_spike.py api/lambda_spike.py
+COPY api/lambda_handler.py api/lambda_handler.py
+COPY api/__init__.py api/__init__.py
+
+ENV LAMBDA_APP_MODULE=api.lambda_spike
+CMD ["api.lambda_handler.handler"]

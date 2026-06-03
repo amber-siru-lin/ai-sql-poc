@@ -1,0 +1,75 @@
+.semantic-editor-chat {
+  background: var(--sidebar-bg);
+  border-left: none;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.semantic-editor-chat__loading {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.semantic-editor-chat__loading p {
+  margin: 0;
+}
+
+.semantic-editor-chat__head {
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding: 0.4rem 0.5rem;
+}
+
+.semantic-editor-chat__new {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.semantic-editor-chat__new:hover {
+  background: var(--surface-hover);
+}
+
+.semantic-editor-chat__pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.semantic-editor-chat__pane.copilotKitChat {
+  height: 100%;
+}
+
+.semantic-editor-chat .copilotKitMessages {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.semantic-editor-chat .copilotKitHeader {
+  font-size: 0.78rem;
+  min-height: 36px;
+}
+
+@media (max-width: 900px) {
+  .semantic-editor-chat {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 40vh;
+    width: 100%;
+  }
+}

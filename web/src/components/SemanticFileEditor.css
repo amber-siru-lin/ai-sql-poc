@@ -1,0 +1,176 @@
+.semantic-editor {
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: 0.75rem;
+  min-height: 0;
+}
+
+.semantic-editor__toolbar {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0 0.65rem;
+}
+
+.semantic-editor__toolbar-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  margin-right: auto;
+}
+
+.semantic-editor__btn {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.semantic-editor__btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.semantic-editor__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.semantic-editor__btn--primary {
+  background: rgba(55, 148, 255, 0.15);
+  border-color: #3794ff;
+  color: #3794ff;
+}
+
+.semantic-editor__dirty {
+  color: #e5c07b;
+  font-size: 0.72rem;
+}
+
+.semantic-editor__path {
+  color: var(--muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  margin: 0;
+  word-break: break-all;
+}
+
+.semantic-editor__body {
+  display: flex;
+  flex: 1;
+  gap: 0.65rem;
+  min-height: 0;
+}
+
+.semantic-editor__tree {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  flex-shrink: 0;
+  list-style: none;
+  margin: 0;
+  min-height: 12rem;
+  overflow: auto;
+  padding: 0.35rem 0;
+  width: 14rem;
+}
+
+.semantic-editor__tree-item {
+  display: block;
+  width: 100%;
+}
+
+.semantic-editor__tree-btn {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  padding: 0.3rem 0.55rem;
+  text-align: left;
+  width: 100%;
+}
+
+.semantic-editor__tree-btn:hover {
+  background: var(--surface-hover);
+}
+
+.semantic-editor__tree-btn--active {
+  background: rgba(55, 148, 255, 0.12);
+  color: #3794ff;
+}
+
+.semantic-editor__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.semantic-editor__textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  flex: 1;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  min-height: 14rem;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.semantic-editor__textarea:disabled {
+  opacity: 0.6;
+}
+
+.semantic-editor__status {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 0.35rem 0 0;
+}
+
+.semantic-editor__status--error {
+  color: #f48771;
+}
+
+.semantic-editor__status--ok {
+  color: #4ec9b0;
+}
+
+.semantic-editor__validate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+  max-height: 8rem;
+  overflow: auto;
+  padding: 0.5rem 0.65rem;
+}
+
+.semantic-editor__validate pre {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.semantic-editor__validate--ok {
+  border-color: rgba(78, 201, 176, 0.35);
+}
+
+.semantic-editor__validate--fail {
+  border-color: rgba(244, 135, 113, 0.35);
+}

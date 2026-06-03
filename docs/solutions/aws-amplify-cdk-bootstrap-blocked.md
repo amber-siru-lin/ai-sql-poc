@@ -8,12 +8,14 @@ tags:
   - sso
   - brainforge
   - phase-3
-status: blocked
+status: resolved
 account_id: "654654461736"
 region: us-east-1
 ---
 
-# Amplify Gen 2 sandbox blocked on CDK bootstrap
+# Amplify Gen 2 sandbox blocked on CDK bootstrap (historical)
+
+> **Update (2026-06):** Bootstrap succeeded; sandbox deploy works. Use [deploy/clients/README.md](../../deploy/clients/README.md) for new accounts. Hosting UI build may still require admin `iam:CreateRole`.
 
 ## Symptom
 

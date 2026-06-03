@@ -20,20 +20,48 @@ from src.semantic_layer.runtime import semantic_layer_from_config
 
 ensure_repo_on_path()
 
-try:
-    from config.snowflake_config import (
-        account,
-        database,
-        password,
-        schema,
-        user,
-        warehouse,
-    )
-except ImportError as exc:
-    raise SystemExit(
-        "Missing config/snowflake_config.py — "
-        "cp config/snowflake_config.example.py config/snowflake_config.py"
-    ) from exc
+
+def _load_snowflake_credentials() -> tuple[str, str, str, str, str, str]:
+    try:
+        from config.snowflake_config import (
+            account,
+            database,
+            password,
+            schema,
+            user,
+            warehouse,
+        )
+        return account, user, password, warehouse, database, schema
+    except ImportError:
+        import os
+
+        env = {
+            "account": os.environ.get("SNOWFLAKE_ACCOUNT", ""),
+            "user": os.environ.get("SNOWFLAKE_USER", ""),
+            "password": os.environ.get("SNOWFLAKE_PASSWORD", ""),
+            "warehouse": os.environ.get("SNOWFLAKE_WAREHOUSE", ""),
+            "database": os.environ.get("SNOWFLAKE_DATABASE", ""),
+            "schema": os.environ.get("SNOWFLAKE_SCHEMA", ""),
+        }
+        if all(env.values()):
+            return (
+                env["account"],
+                env["user"],
+                env["password"],
+                env["warehouse"],
+                env["database"],
+                env["schema"],
+            )
+        if os.environ.get("AWS_LAMBDA_FUNCTION_NAME") or os.environ.get("LAMBDA_TASK_ROOT"):
+            return ("", "", "", "", "", "")
+        raise SystemExit(
+            "Missing config/snowflake_config.py — "
+            "cp config/snowflake_config.example.py config/snowflake_config.py "
+            "or set SNOWFLAKE_* env vars"
+        ) from None
+
+
+account, user, password, warehouse, database, schema = _load_snowflake_credentials()
 
 SCHEMA_PATH = repo_root() / "schema" / "tpch_sf1.md"
 SNOWFLAKE_SCHEMA = "TPCH_SF1"

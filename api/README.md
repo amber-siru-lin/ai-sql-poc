@@ -19,7 +19,9 @@ aws sso login --profile $AWS_PROFILE
 docker compose up -d
 # Add DATABASE_URL=postgresql://ai_sql:ai_sql_dev@localhost:5432/ai_sql_poc to .env
 
-scripts/py scripts/sync_wren_profile.py   # optional, for Wren mode
+# Wren: on startup, syncs profile + runs `wren context build` if target/mdl.json is missing
+# (install: scripts/py -m pip install "wrenai[snowflake,memory]" pyyaml)
+# WREN_SKIP_BOOTSTRAP=1 to disable; WREN_BOOTSTRAP_MEMORY_INDEX=1 for memory index
 
 # Optional audit → S3 (local logs/audit/*.jsonl always)
 export AUDIT_S3_BUCKET=cta-poc-ai-sql-audit-dev-654654461736

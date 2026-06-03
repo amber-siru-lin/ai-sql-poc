@@ -1,0 +1,49 @@
+.semantic-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.semantic-toggle__label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-right: 0.15rem;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.semantic-toggle__btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.55rem;
+}
+
+.semantic-toggle__btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.semantic-toggle__btn--active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.semantic-toggle__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.semantic-toggle__hint {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin: 0.15rem 0 0;
+  width: 100%;
+}

@@ -1,0 +1,135 @@
+.left-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.left-sidebar__nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  width: 100%;
+}
+
+.left-sidebar__nav-btn:hover {
+  background: var(--surface-hover);
+}
+
+.left-sidebar__nav-btn--active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.left-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem 0.9rem;
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+}
+
+.left-sidebar__brand {
+  padding-bottom: 0.25rem;
+}
+
+.left-sidebar__eyebrow {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.left-sidebar__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.left-sidebar__subtitle {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin: 0.35rem 0 0;
+}
+
+.left-sidebar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.left-sidebar__section--grow {
+  flex: 1;
+  min-height: 4rem;
+}
+
+.left-sidebar__section-title {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.left-sidebar__status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.left-sidebar__status-list li {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 7px;
+  width: 7px;
+  background: var(--muted);
+}
+
+.status-dot--ok {
+  background: #3fb950;
+  box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.25);
+}
+
+.status-dot--warn {
+  background: #d29922;
+  box-shadow: 0 0 0 2px rgba(210, 153, 34, 0.25);
+}
+
+.left-sidebar__placeholder {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+}

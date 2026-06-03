@@ -274,7 +274,12 @@ async def copilotkit_single_endpoint(body: CopilotKitMethodRequest):
 
 @app.on_event("startup")
 async def startup() -> None:
+    import asyncio
+
+    from src.wren_bootstrap import ensure_wren_mdl_at_startup
+
     check_all()
+    await asyncio.to_thread(ensure_wren_mdl_at_startup)
     await init_checkpointer_from_env()
     await init_chat_sessions_from_env()
     from src.checkpoint_factory import get_checkpointer
