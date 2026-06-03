@@ -1,6 +1,7 @@
 import type {
   AppView,
   AuditConfig,
+  ApiStatusResponse,
   PostgresDockerStatus,
   SemanticLayerMode,
   SemanticLayerStatus,
@@ -66,6 +67,7 @@ function postgresConnectionLabel(postgres: PostgresDockerStatus | null): {
 
 type Props = {
   apiStatus: string;
+  apiStatusPayload: ApiStatusResponse | null;
   auditStatus: AuditConfig | null;
   postgresStatus: PostgresDockerStatus | null;
   semanticLayerMode: SemanticLayerMode;
@@ -91,6 +93,7 @@ type Props = {
 
 export function LeftSidebar({
   apiStatus,
+  apiStatusPayload,
   auditStatus,
   postgresStatus,
   semanticLayerMode,
@@ -116,12 +119,18 @@ export function LeftSidebar({
   const apiOk = apiStatus === "connected";
   const auditConn = auditConnectionLabel(auditStatus);
   const postgresConn = postgresConnectionLabel(postgresStatus);
+  const appTitle = apiStatusPayload?.app_title ?? "AI SQL Assistant";
+  const datasetLabel = apiStatusPayload?.dataset ?? "Snowflake dataset";
+  const bedrockLabel =
+    apiStatusPayload?.bedrock?.model_label ??
+    apiStatusPayload?.bedrock?.model_id ??
+    "Bedrock model";
 
   return (
     <aside className="left-sidebar" aria-label="Workspace">
       <div className="left-sidebar__brand">
         <p className="left-sidebar__eyebrow">AI SQL POC</p>
-        <h1 className="left-sidebar__title">TPCH Assistant</h1>
+        <h1 className="left-sidebar__title">{appTitle}</h1>
         <p className="left-sidebar__subtitle">Natural language → Snowflake</p>
       </div>
 
@@ -170,7 +179,7 @@ export function LeftSidebar({
           </li>
           <li>
             <span className="status-dot status-dot--ok" aria-hidden />
-            Nova Pro · TPCH_SF1
+            {bedrockLabel} · {datasetLabel}
           </li>
           <li title={auditConn.title}>
             <span

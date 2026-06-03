@@ -99,7 +99,7 @@ Actions an automation can take without the browser:
 Restart the API after changes to `src/semantic_editor/` or `api/main.py`:
 
 ```bash
-export AWS_PROFILE="${AWS_PROFILE:-Brainfore-Team-Set-654654461736}"
+export AWS_PROFILE="${AWS_PROFILE:-your-sso-profile-name}"
 lsof -ti :8000 2>/dev/null | xargs kill 2>/dev/null; sleep 1
 scripts/py -m uvicorn api.main:app --reload --port 8000
 ```

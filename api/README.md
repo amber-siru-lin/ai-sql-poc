@@ -12,8 +12,8 @@ Exposes the Phase 2 Deep Agent to the browser via **AG-UI** (`ag-ui-langgraph`).
 From repo root (so `src/` and `config/` imports resolve):
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws sso login --profile $AWS_PROFILE
+export AWS_PROFILE=your-sso-profile-name
+aws sso login --profile "$AWS_PROFILE"
 
 # Optional — durable LangGraph checkpoints (Phase 3.6)
 docker compose up -d
@@ -24,7 +24,7 @@ docker compose up -d
 # WREN_SKIP_BOOTSTRAP=1 to disable; WREN_BOOTSTRAP_MEMORY_INDEX=1 for memory index
 
 # Optional audit → S3 (local logs/audit/*.jsonl always)
-export AUDIT_S3_BUCKET=cta-poc-ai-sql-audit-dev-654654461736
+export AUDIT_S3_BUCKET=your-org-ai-sql-audit-dev
 # or add AUDIT_S3_BUCKET=... to repo-root .env (loaded on API startup)
 
 scripts/py -m uvicorn api.main:app --reload --port 8000

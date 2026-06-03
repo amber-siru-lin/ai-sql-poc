@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import type {
   AppView,
   AuditConfig,
+  ApiStatusResponse,
   PostgresDockerStatus,
   SemanticLayerMode,
   SemanticLayerStatus,
@@ -20,6 +21,7 @@ import "./AppShell.css";
 
 type Props = {
   apiStatus: string;
+  apiStatusPayload: ApiStatusResponse | null;
   auditStatus: AuditConfig | null;
   postgresStatus: PostgresDockerStatus | null;
   semanticLayerMode: SemanticLayerMode;
@@ -54,6 +56,7 @@ type Props = {
 
 export function AppShell({
   apiStatus,
+  apiStatusPayload,
   auditStatus,
   postgresStatus,
   semanticLayerMode,
@@ -108,6 +111,7 @@ export function AppShell({
     >
       <LeftSidebar
         apiStatus={apiStatus}
+        apiStatusPayload={apiStatusPayload}
         auditStatus={auditStatus}
         postgresStatus={postgresStatus}
         semanticLayerMode={semanticLayerMode}
@@ -137,6 +141,7 @@ export function AppShell({
             threadId={threadId}
             reloadNonce={reloadNonce}
             chatInstructions={chatInstructions}
+            datasetLabel={apiStatusPayload?.dataset}
             copilotOwnerThreadIdRef={copilotOwnerThreadIdRef}
             onSessionsChanged={onSessionsChanged}
           />
@@ -165,6 +170,8 @@ export function AppShell({
                 <ContextSidebar
                   semanticLayerMode={semanticLayerMode}
                   threadId={threadId}
+                  apiStatusPayload={apiStatusPayload}
+                  auditStatus={auditStatus}
                   onOpenAuditForThread={onOpenAuditForThread}
                 />
               ) : (

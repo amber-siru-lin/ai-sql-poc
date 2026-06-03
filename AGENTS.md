@@ -7,7 +7,7 @@ When work requires a fresh API (backend changes, `.env` updates, audit/S3 config
 From repo root:
 
 ```bash
-export AWS_PROFILE="${AWS_PROFILE:-Brainfore-Team-Set-654654461736}"
+export AWS_PROFILE="${AWS_PROFILE:-your-sso-profile-name}"
 lsof -ti :8000 2>/dev/null | xargs kill 2>/dev/null
 sleep 1
 scripts/py -m uvicorn api.main:app --reload --port 8000

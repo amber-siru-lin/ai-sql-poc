@@ -1,16 +1,24 @@
-import json
+import sys
 from pathlib import Path
 
 import boto3
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from config.settings import aws_region, bedrock_model_id
 WORKING_MODEL_PATH = REPO_ROOT / "config" / "working_model.txt"
+
+region = aws_region()
+model_id = bedrock_model_id()
 
 print("AWS Bedrock Diagnostic Tool")
 print("=" * 60)
+print(f"Region: {region}")
+print(f"Model:  {model_id}")
 
-bedrock = boto3.client("bedrock", region_name="us-east-1")
-bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-1")
+bedrock = boto3.client("bedrock", region_name=region)
+bedrock_runtime = boto3.client("bedrock-runtime", region_name=region)
 
 print("\n1. Checking for INFERENCE PROFILES in your account...")
 print("-" * 60)
@@ -26,26 +34,24 @@ try:
 except Exception as exc:
     print(f"❌ Error listing profiles: {exc}")
 
-print("\n2. Testing Nova Pro inference profile (POC default)...")
+print("\n2. Testing configured Bedrock model...")
 print("-" * 60)
-
-nova_model_id = "us.amazon.nova-pro-v1:0"
-print(f"Model ID: {nova_model_id}")
+print(f"Model ID: {model_id}")
 try:
     response = bedrock_runtime.converse(
-        modelId=nova_model_id,
+        modelId=model_id,
         messages=[{"role": "user", "content": [{"text": "Say hello in one word."}]}],
         inferenceConfig={"maxTokens": 10},
     )
     text = response["output"]["message"]["content"][0]["text"]
     print(f"✅ SUCCESS! Response: {text}")
     WORKING_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    WORKING_MODEL_PATH.write_text(nova_model_id, encoding="utf-8")
+    WORKING_MODEL_PATH.write_text(model_id, encoding="utf-8")
     print(f"Saved working model to {WORKING_MODEL_PATH}")
 except Exception as exc:
     error = str(exc)
     if "ExpiredToken" in error:
-        print("❌ AWS credentials expired — run: aws sso login")
+        print("❌ AWS credentials expired — run: aws sso login --profile $AWS_PROFILE")
     else:
         print(f"❌ Error: {error[:200]}")
 

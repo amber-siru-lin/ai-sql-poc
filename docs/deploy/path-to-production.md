@@ -28,7 +28,7 @@ How this repo moves from **local dev** to **client-ready production**, and what 
 
 ```bash
 docker start ai-sql-poc-postgres   # or: docker compose up -d
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile "$AWS_PROFILE"
 ./scripts/py -m uvicorn api.main:app --reload --port 8000
 

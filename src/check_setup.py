@@ -35,10 +35,12 @@ def check_aws_credentials() -> None:
     profile = os.environ.get("AWS_PROFILE")
     hint = (
         "AWS credentials not found.\n\n"
-        "This POC uses SSO. Run these in your terminal first:\n"
-        "  aws sso login --profile Brainfore-Team-Set-654654461736\n"
-        "  export AWS_PROFILE=Brainfore-Team-Set-654654461736\n\n"
-        "Then run the script again."
+        "Configure AWS CLI credentials for your account, then try again.\n"
+        "Common setup:\n"
+        "  aws configure sso          # first-time SSO profile\n"
+        "  export AWS_PROFILE=your-profile-name\n"
+        "  aws sso login --profile $AWS_PROFILE\n\n"
+        "See config/README.md and SETUP.md for details."
     )
     if profile:
         hint = (

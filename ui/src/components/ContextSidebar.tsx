@@ -1,6 +1,6 @@
 import { useCopilotKit } from "@copilotkit/react-core/v2";
 
-import { SAMPLE_QUESTIONS, type SemanticLayerMode } from "../config";
+import { SAMPLE_QUESTIONS, type ApiStatusResponse, type AuditConfig, type SemanticLayerMode } from "../config";
 import { useSqlAgent } from "../hooks/useSqlAgent";
 import { SessionPanel } from "./SessionPanel";
 import "./ContextSidebar.css";
@@ -14,17 +14,22 @@ const MODE_HINT: Record<SemanticLayerMode, string> = {
 type Props = {
   semanticLayerMode: SemanticLayerMode;
   threadId: string;
+  apiStatusPayload: ApiStatusResponse | null;
+  auditStatus: AuditConfig | null;
   onOpenAuditForThread?: () => void;
 };
 
 export function ContextSidebar({
   semanticLayerMode,
   threadId,
+  apiStatusPayload,
+  auditStatus,
   onOpenAuditForThread,
 }: Props) {
   const { agent } = useSqlAgent();
   const { copilotkit } = useCopilotKit();
   const isLoading = Boolean(agent?.isRunning);
+  const datasetLabel = apiStatusPayload?.dataset ?? "your dataset";
 
   const ask = (question: string) => {
     if (!agent || isLoading) return;
@@ -43,7 +48,7 @@ export function ContextSidebar({
       <section className="context-sidebar__section">
         <h2 className="context-sidebar__section-title">Suggested questions</h2>
         <p className="context-sidebar__hint">
-          Click to send to the assistant. Dataset: <strong>TPCH_SF1</strong>.
+          Click to send to the assistant. Dataset: <strong>{datasetLabel}</strong>.
         </p>
         <ul className="context-sidebar__questions">
           {SAMPLE_QUESTIONS.map((q) => (
@@ -73,6 +78,7 @@ export function ContextSidebar({
         <SessionPanel
           semanticLayerMode={semanticLayerMode}
           threadId={threadId}
+          auditStatus={auditStatus}
           onViewAuditLogs={onOpenAuditForThread}
         />
       </section>

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from deepagents import create_deep_agent
-from langchain_aws import ChatBedrock
 from langgraph.checkpoint.memory import MemorySaver
+
+from config.settings import create_bedrock_chat
 
 from src.semantic_editor.middleware import editor_system_prompt
 from src.semantic_editor.prompts import EDITOR_BASE_PROMPT
@@ -20,7 +21,7 @@ def build_editor_agent_graph(*, checkpointer=None):
     """Return the compiled LangGraph for the semantic layer editor agent."""
     if checkpointer is None:
         checkpointer = MemorySaver()
-    model = ChatBedrock(model_id="us.amazon.nova-pro-v1:0", region_name="us-east-1")
+    model = create_bedrock_chat()
     return create_deep_agent(
         model=model,
         tools=EDITOR_TOOLS,

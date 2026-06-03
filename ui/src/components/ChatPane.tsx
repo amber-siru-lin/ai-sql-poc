@@ -1,6 +1,6 @@
 import type { MutableRefObject } from "react";
 import { CopilotChat } from "@copilotkit/react-ui";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { AssistantMessage } from "./AssistantMessage";
 import { chatMarkdownTagRenderers } from "./chatMarkdownRenderers";
@@ -13,16 +13,12 @@ import {
 import { useSqlAgent } from "../hooks/useSqlAgent";
 import "./ChatPane.css";
 
-const CHAT_LABELS = {
-  title: "SQL Assistant",
-  initial: "Ask a question about TPCH_SF1…",
-} as const;
-
 type Props = {
   threadId: string;
   /** Bump to reload the same thread from storage/audit (re-click in sidebar). */
   reloadNonce: number;
   chatInstructions: string;
+  datasetLabel?: string;
   copilotOwnerThreadIdRef: MutableRefObject<string>;
   onSessionsChanged?: () => void;
 };
@@ -31,6 +27,7 @@ export function ChatPane({
   threadId,
   reloadNonce,
   chatInstructions,
+  datasetLabel,
   copilotOwnerThreadIdRef,
   onSessionsChanged,
 }: Props) {
@@ -38,6 +35,15 @@ export function ChatPane({
   const [loaded, setLoaded] = useState<StoredChatMessage[] | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   const onSessionsChangedRef = useRef(onSessionsChanged);
+  const chatLabels = useMemo(
+    () => ({
+      title: "SQL Assistant",
+      initial: datasetLabel
+        ? `Ask a question about ${datasetLabel}…`
+        : "Ask a question about your Snowflake data…",
+    }),
+    [datasetLabel],
+  );
   onSessionsChangedRef.current = onSessionsChanged;
   const prevCountRef = useRef(0);
 
@@ -108,7 +114,7 @@ export function ChatPane({
           key={threadId}
           className="app-chat"
           instructions={chatInstructions}
-          labels={CHAT_LABELS}
+          labels={chatLabels}
           AssistantMessage={AssistantMessage}
           markdownTagRenderers={chatMarkdownTagRenderers}
         />

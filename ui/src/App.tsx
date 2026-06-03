@@ -35,11 +35,12 @@ import {
   setSessionsAvailableFromStatus,
 } from "./lib/sessionApi";
 
-const CHAT_INSTRUCTIONS = `You are helping a business user explore the Snowflake TPCH_SF1 dataset.
+const CHAT_INSTRUCTIONS_FALLBACK = `You are helping a business user explore their Snowflake dataset.
 Use the active semantic layer mode (Off, Wren, or Cortex) as described in your system prompt.
 Always explain the answer in plain English and show the final SQL.`;
 
 export default function App() {
+  const [apiStatusPayload, setApiStatusPayload] = useState<ApiStatusResponse | null>(null);
   const [apiStatus, setApiStatus] = useState<string>("checking…");
   const [semanticStatus, setSemanticStatus] =
     useState<ApiStatusResponse["semantic_layer"] | null>(null);
@@ -151,10 +152,19 @@ export default function App() {
     selectThread(crypto.randomUUID());
   }, [semanticLayerMode, selectThread]);
 
+  const chatInstructions = useMemo(() => {
+    const dataset = apiStatusPayload?.dataset;
+    if (!dataset) return CHAT_INSTRUCTIONS_FALLBACK;
+    return `You are helping a business user explore the Snowflake dataset "${dataset}".
+Use the active semantic layer mode (Off, Wren, or Cortex) as described in your system prompt.
+Always explain the answer in plain English and show the final SQL.`;
+  }, [apiStatusPayload?.dataset]);
+
   const refreshApiStatus = useCallback(() => {
     fetch(`${API_URL}/api/status`)
       .then((r) => r.json())
       .then((data: ApiStatusResponse) => {
+        setApiStatusPayload(data);
         setApiStatus(data.status === "ok" ? "connected" : "unknown");
         setSemanticStatus(data.semantic_layer);
         setAuditStatus(data.audit ?? null);
@@ -165,6 +175,7 @@ export default function App() {
         }
       })
       .catch(() => {
+        setApiStatusPayload(null);
         setApiStatus(`offline — start the API (${API_URL})`);
         setSemanticStatus(null);
         setAuditStatus(null);
@@ -210,12 +221,13 @@ export default function App() {
       />
       <AppShell
         apiStatus={apiStatus}
+        apiStatusPayload={apiStatusPayload}
         auditStatus={auditStatus}
         postgresStatus={postgresStatus}
         semanticLayerMode={semanticLayerMode}
         semanticStatus={semanticStatus}
         onSemanticLayerChange={setSemanticLayerMode}
-        chatInstructions={CHAT_INSTRUCTIONS}
+        chatInstructions={chatInstructions}
         threadId={threadId}
         reloadNonce={reloadNonce}
         copilotOwnerThreadIdRef={copilotOwnerThreadIdRef}

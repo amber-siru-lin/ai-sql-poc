@@ -36,6 +36,15 @@ from pydantic import BaseModel
 
 from src.ag_ui_agent import SemanticLayerLangGraphAgent
 from src.agent_factory import AGENT_DESCRIPTION, AGENT_NAME, build_agent_graph
+from config.settings import (
+    app_title,
+    aws_region,
+    bedrock_model_id,
+    bedrock_model_label,
+    dataset_label,
+    snowflake_database,
+    snowflake_schema,
+)
 from src.audit_logger import audit_config
 from src.audit_reader import list_audit_dates, list_audit_sessions, read_audit_entries
 from src.checkpoint_factory import checkpoint_backend, init_checkpointer_from_env, shutdown_checkpointer
@@ -231,7 +240,17 @@ def status():
     return {
         "status": "ok",
         "agent": AGENT_NAME,
-        "dataset": "TPCH_SF1",
+        "app_title": app_title(),
+        "dataset": dataset_label(),
+        "snowflake": {
+            "database": snowflake_database(),
+            "schema": snowflake_schema(),
+        },
+        "bedrock": {
+            "model_id": bedrock_model_id(),
+            "model_label": bedrock_model_label(),
+            "region": aws_region(),
+        },
         "semantic_layer": _semantic_layer_status(),
         "audit": audit_config(check_s3=True),
         "postgres": postgres_docker_status(),

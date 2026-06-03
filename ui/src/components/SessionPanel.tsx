@@ -1,69 +1,79 @@
-import type { SemanticLayerMode } from "../config";
+import type { AuditConfig, SemanticLayerMode } from "../config";
 import { useSqlAgent } from "../hooks/useSqlAgent";
 import "./SessionPanel.css";
 
-const AUDIT_BUCKET = "cta-poc-ai-sql-audit-dev-654654461736";
+function memoryCommon(auditBucket: string | null): { title: string; detail: string }[] {
+  const auditDetail = auditBucket
+    ? `Each completed run writes one JSON file to S3 (${auditBucket}/audit/). Check Connection → Audit log (S3) for sync status. Open Audit logs in the sidebar or use the button below.`
+    : "Set AUDIT_S3_BUCKET in the API .env to persist query audit logs to S3. Until then, audit features stay disabled.";
 
-const MEMORY_COMMON: { title: string; detail: string }[] = [
-  {
-    title: "Follow-up context (LangGraph)",
-    detail:
-      "The API keeps this thread’s messages in RAM (MemorySaver) while uvicorn runs. Restarting the API clears follow-up memory; use the same thread ID after refresh only if chat snapshots restored your messages.",
-  },
-  {
-    title: "Thread ID (browser)",
-    detail:
-      "Stored in localStorage (`ai-sql-poc-thread-id`). CopilotKit sends it on every run so retries and checkpoints stay on one thread.",
-  },
-  {
-    title: "Chat snapshots (browser)",
-    detail:
-      "Up to 80 messages per thread in localStorage (`ai-sql-poc-chat-snapshots`) so the UI can restore text after refresh. Not a full server-side transcript store.",
-  },
-  {
-    title: "Query audit log (S3)",
-    detail: `Each completed run writes one JSON file to S3 (${AUDIT_BUCKET}/audit/). Check Connection → Audit log (S3) for sync status. Open Audit logs in the sidebar or use the button below.`,
-  },
-  {
-    title: "Chat history (sidebar)",
-    detail:
-      "Past sessions are grouped by thread ID from the audit log (API runs only). Selecting one reuses that thread ID; server follow-ups apply only while the API still holds that checkpoint. Use + New to start a fresh session.",
-  },
-  {
-    title: "SQL retries",
-    detail: "Per-thread attempt counters live in API memory only until uvicorn restarts.",
-  },
-];
-
-const MEMORY_LAYERS: Record<
-  SemanticLayerMode,
-  { title: string; detail: string }[]
-> = {
-  off: [...MEMORY_COMMON],
-  wren: [
-    ...MEMORY_COMMON,
+  return [
     {
-      title: "Wren semantic memory",
+      title: "Follow-up context (LangGraph)",
       detail:
-        "NL↔SQL recall from `wren memory index` under wren/tpch/target/ (gitignored). Rebuild after MDL changes.",
+        "The API keeps this thread’s messages in RAM (MemorySaver) while uvicorn runs. Restarting the API clears follow-up memory; use the same thread ID after refresh only if chat snapshots restored your messages.",
     },
-  ],
-  cortex: [...MEMORY_COMMON],
-};
+    {
+      title: "Thread ID (browser)",
+      detail:
+        "Stored in localStorage (`ai-sql-poc-thread-id`). CopilotKit sends it on every run so retries and checkpoints stay on one thread.",
+    },
+    {
+      title: "Chat snapshots (browser)",
+      detail:
+        "Up to 80 messages per thread in localStorage (`ai-sql-poc-chat-snapshots`) so the UI can restore text after refresh. Not a full server-side transcript store.",
+    },
+    {
+      title: "Query audit log (S3)",
+      detail: auditDetail,
+    },
+    {
+      title: "Chat history (sidebar)",
+      detail:
+        "Past sessions are grouped by thread ID from the audit log (API runs only). Selecting one reuses that thread ID; server follow-ups apply only while the API still holds that checkpoint. Use + New to start a fresh session.",
+    },
+    {
+      title: "SQL retries",
+      detail: "Per-thread attempt counters live in API memory only until uvicorn restarts.",
+    },
+  ];
+}
+
+function memoryLayers(
+  semanticLayerMode: SemanticLayerMode,
+  auditBucket: string | null,
+): { title: string; detail: string }[] {
+  const common = memoryCommon(auditBucket);
+  if (semanticLayerMode === "wren") {
+    return [
+      ...common,
+      {
+        title: "Wren semantic memory",
+        detail:
+          "NL↔SQL recall from `wren memory index` under wren/tpch/target/ (gitignored). Rebuild after MDL changes.",
+      },
+    ];
+  }
+  return common;
+}
 
 type Props = {
   semanticLayerMode: SemanticLayerMode;
   threadId: string;
+  auditStatus: AuditConfig | null;
   onViewAuditLogs?: () => void;
 };
 
 export function SessionPanel({
   semanticLayerMode,
   threadId,
+  auditStatus,
   onViewAuditLogs,
 }: Props) {
   const { agent } = useSqlAgent({ watchMessages: true });
   const messageCount = agent?.messages?.length ?? 0;
+  const auditBucket = auditStatus?.s3_bucket ?? null;
+  const items = memoryLayers(semanticLayerMode, auditBucket);
 
   const shortThread =
     threadId.length > 12 ? `${threadId.slice(0, 8)}…${threadId.slice(-4)}` : threadId;
@@ -87,7 +97,7 @@ export function SessionPanel({
 
       <h3 className="session-panel__subtitle">Where memory lives</h3>
       <ul className="session-panel__memory-list">
-        {MEMORY_LAYERS[semanticLayerMode].map((item) => (
+        {items.map((item) => (
           <li key={item.title}>
             <strong>{item.title}</strong>
             <span>{item.detail}</span>

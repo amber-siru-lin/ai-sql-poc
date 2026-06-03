@@ -38,7 +38,7 @@ Or full `requirements.txt` (includes Phase 2 packages too — harmless).
 ### Run
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile $AWS_PROFILE
 
 scripts/py src/run_baseline_test.py    # one question
@@ -75,7 +75,7 @@ scripts/py -m pip install deepagents langgraph
 ### Run
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile $AWS_PROFILE
 
 scripts/py src/ask_deep_agent.py              # interactive + memory
@@ -149,7 +149,7 @@ cp config/snowflake_config.example.py config/snowflake_config.py
 ```bash
 cd ~/Documents/GitHub/personal_build
 
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile $AWS_PROFILE
 
 scripts/py -m uvicorn api.main:app --reload --port 8000
@@ -239,7 +239,7 @@ Blocked until IT fixes CDK bootstrap. Do not use for daily dev.
 ```bash
 # Blocked — see docs/solutions/aws-amplify-cdk-bootstrap-blocked.md
 cd web
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 NODE_OPTIONS="--no-webstorage" npx ampx sandbox --profile $AWS_PROFILE
 ```
 

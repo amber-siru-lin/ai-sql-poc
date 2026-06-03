@@ -51,7 +51,17 @@ export type PostgresDockerStatus = {
 export type ApiStatusResponse = {
   status: string;
   agent: string;
+  app_title?: string;
   dataset: string;
+  snowflake?: {
+    database: string;
+    schema: string;
+  };
+  bedrock?: {
+    model_id: string;
+    model_label: string;
+    region: string;
+  };
   semantic_layer: SemanticLayerStatus;
   audit?: AuditConfig;
   postgres?: PostgresDockerStatus;

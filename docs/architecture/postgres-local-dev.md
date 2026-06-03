@@ -84,7 +84,7 @@ scripts/py -m pip install -r requirements.txt
 ### 3. Start the API (creates checkpoint tables)
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile $AWS_PROFILE
 
 scripts/py -m uvicorn api.main:app --reload --port 8000

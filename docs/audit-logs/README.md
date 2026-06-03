@@ -10,7 +10,7 @@ Append-only audit trail for every completed **Deep Agent** run (CopilotKit UI vi
 
 | Item | Detail |
 |------|--------|
-| **S3 bucket** | `cta-poc-ai-sql-audit-dev-654654461736` (`us-east-1`, versioning on, public access blocked) |
+| **S3 bucket** | Set via `AUDIT_S3_BUCKET` in `.env` (client-provisioned bucket) |
 | **Storage** | **S3 only** when `AUDIT_S3_BUCKET` is set (default `AUDIT_DESTINATION=s3`) — no local `logs/audit/` |
 | **S3 objects** | `audit/YYYY/MM/DD/{thread_id}/{run_id}.json` — one JSON file per completed run |
 | **Code** | `src/audit_logger.py`, `src/audit_extract.py` |
@@ -28,7 +28,7 @@ This matches the CTA architecture **auditLogger → S3** path for POC troublesho
 From repo root (loads `.env` including `AUDIT_S3_BUCKET`):
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile "$AWS_PROFILE"   # if session expired
 
 lsof -ti :8000 | xargs kill 2>/dev/null
@@ -40,7 +40,7 @@ Verify:
 
 ```bash
 curl -s http://localhost:8000/api/status | python3 -m json.tool
-# Expect audit.s3_bucket = "cta-poc-ai-sql-audit-dev-654654461736"
+# Expect audit.s3_bucket to match AUDIT_S3_BUCKET in .env
 ```
 
 ---
@@ -57,7 +57,7 @@ curl -s http://localhost:8000/api/status | python3 -m json.tool
 Copy from [.env.example](../../.env.example). Your local `.env` should include:
 
 ```bash
-AUDIT_S3_BUCKET=cta-poc-ai-sql-audit-dev-654654461736
+AUDIT_S3_BUCKET=your-org-ai-sql-audit-dev
 AUDIT_S3_PREFIX=audit/
 ```
 
@@ -112,9 +112,9 @@ Left sidebar → **Audit logs**, or **Connection** → check **Audit log (S3) co
 ### S3
 
 ```bash
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws s3 ls s3://cta-poc-ai-sql-audit-dev-654654461736/audit/ --recursive | tail -20
-aws s3 cp s3://cta-poc-ai-sql-audit-dev-654654461736/audit/2026/06/01/THREAD_ID/RUN_ID.json - | python3 -m json.tool
+export AWS_PROFILE=your-sso-profile-name
+aws s3 ls "s3://${AUDIT_S3_BUCKET}/audit/" --recursive | tail -20
+aws s3 cp "s3://${AUDIT_S3_BUCKET}/audit/2026/06/01/THREAD_ID/RUN_ID.json" - | python3 -m json.tool
 ```
 
 Later (CTA target): query with **Athena** over the `audit/` prefix; add **S3 Object Lock** for production immutability.
@@ -127,7 +127,7 @@ Later (CTA target): query with **Athena** over the `audit/` prefix; add **S3 Obj
 |---------|-----|
 | No entries in Audit logs UI | Run a chat question; confirm `audit.s3_status` is `ok` on `/api/status`; check API logs |
 | `s3_status: error` | `aws sso login`, IAM `s3:PutObject` + `s3:ListBucket` on the audit bucket/prefix |
-| S3 `AccessDenied` | IAM needs `s3:PutObject` on `arn:aws:s3:::cta-poc-ai-sql-audit-dev-654654461736/audit/*` |
+| S3 `AccessDenied` | IAM needs `s3:PutObject` / `s3:GetObject` on your audit bucket prefix |
 | Empty `sql_executions` | Agent answered without calling a SQL tool (schema-only or error before execute) |
 
 ---

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Snowflake TPCH access (direct + Wren CLI). Run from repo root."""
+"""Verify Snowflake access (direct + optional Wren CLI). Run from repo root."""
 
 from __future__ import annotations
 
@@ -11,11 +11,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from config.settings import dataset_label, qualified_schema_prefix, snowflake_database, snowflake_schema
+
 WREN_DIR = REPO_ROOT / "wren" / "tpch"
 
 
 def main() -> int:
-    print("=== TPCH setup verification ===\n")
+    print(f"=== Snowflake setup verification ({dataset_label()}) ===\n")
     errors = 0
 
     try:
@@ -24,8 +26,10 @@ def main() -> int:
         print("FAIL: config/snowflake_config.py missing")
         return 1
 
+    db = snowflake_database() or sf.database
+    sch = snowflake_schema() or sf.schema
     print(f"Account: {sf.account}")
-    print(f"Database: {sf.database}  warehouse: {sf.warehouse}\n")
+    print(f"Database: {db}  schema: {sch}  warehouse: {sf.warehouse}\n")
 
     try:
         import snowflake.connector
@@ -35,23 +39,22 @@ def main() -> int:
             user=sf.user,
             password=sf.password,
             warehouse=sf.warehouse,
-            database=sf.database,
+            database=db,
+            schema=sch,
         )
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS")
-        count = cur.fetchone()[0]
+        cur.execute(f"SHOW TABLES IN SCHEMA {db}.{sch}")
+        tables = cur.fetchall()
         conn.close()
-        print(f"OK  Direct Snowflake: ORDERS row count = {count}")
+        print(f"OK  Direct Snowflake: {len(tables)} table(s) visible in {db}.{sch}")
     except Exception as exc:
         print(f"FAIL Direct Snowflake: {exc}")
         errors += 1
 
     if not shutil.which("wren"):
-        print("FAIL wren CLI not on PATH (pip install 'wrenai[snowflake,memory]')")
-        errors += 1
+        print("SKIP wren CLI not on PATH (optional — pip install 'wrenai[snowflake,memory]')")
     elif not (WREN_DIR / "target" / "mdl.json").is_file():
-        print("FAIL missing wren/tpch/target/mdl.json — run: cd wren/tpch && wren context build")
-        errors += 1
+        print("SKIP missing wren/tpch/target/mdl.json — run: cd wren/tpch && wren context build")
     else:
         proc = subprocess.run(
             ["wren", "--sql", "SELECT COUNT(*) AS n FROM orders", "-o", "json"],
@@ -70,7 +73,10 @@ def main() -> int:
     if errors:
         print(f"{errors} check(s) failed. Fix above, then: scripts/py scripts/sync_wren_profile.py")
         return 1
-    print("All checks passed. Use Semantics → Wren with model names (orders, customer), not TPCH_SF1.*")
+    print(
+        f"All checks passed for {qualified_schema_prefix()}. "
+        "In Wren mode use MDL model names, not raw Snowflake table prefixes."
+    )
     return 0
 
 
