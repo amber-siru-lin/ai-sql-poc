@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from config.settings import dataset_label, schema_qualified_name, snowflake_schema
 from src.semantic_layer.types import SemanticLayerMode
 
-_BASE = """You are a Snowflake SQL analyst for the TPCH_SF1 sample dataset.
+
+def _base_prompt() -> str:
+    return f"""You are a Snowflake SQL analyst for the {dataset_label()} dataset.
 
 Follow-up questions:
 - The conversation history contains prior questions and answers.
@@ -21,27 +24,34 @@ Error handling (enforced in tools):
 Reply with: (a) plain-English answer, (b) final SQL, (c) key numbers.
 """
 
-_OFF = """
+
+def _off_prompt() -> str:
+    example_table = schema_qualified_name("CUSTOMER")
+    schema_name = snowflake_schema() or "schema"
+    return f"""
 Active semantic layer: OFF (markdown schema only).
 
 Workflow:
 1. Call get_schema_summary if you need table or column names.
-2. Write a SELECT using fully qualified names (TPCH_SF1.CUSTOMER, etc.).
+2. Write a SELECT using fully qualified names ({example_table}, etc.).
 3. Call execute_snowflake_sql to run it.
 4. If Snowflake returns ERROR [retryable], fix the SQL and retry until limits hit.
    If ERROR [repeat_error], [max_attempts], or [non_retryable], stop and report to the user.
 
 Do not use wren_* or ask_cortex_analyst tools in this mode.
+Use schema prefix: {schema_name}
 """
 
-_WREN = """
+
+def _wren_prompt() -> str:
+    db = snowflake_schema() or "physical schema"
+    return f"""
 Active semantic layer: WREN (MDL + semantic engine).
 
 Workflow:
 1. Prefer wren_memory_fetch when the question needs schema or business context.
-2. Write SQL using MDL **model** names only: customer, orders, nation (lowercase).
-   Use model column names: customer_key, customer_name, nation_name, total_price, nation_key, order_key, mktsegment.
-   Do not use a column called `name` — use customer_name or nation_name.
+2. Write SQL using MDL **model** names only (lowercase model names from the MDL).
+   Use model column names from wren_memory_fetch — not raw Snowflake column names.
 3. Call wren_dry_plan to preview how Wren expands your SQL (output shows physical tables — that is normal).
    Then call wren_run_sql with the **same modeled SQL** you wrote — NOT the expanded dry-plan text.
 4. If tools return ERROR [retryable], fix modeled SQL and retry until limits hit.
@@ -49,12 +59,14 @@ Workflow:
 
 Forbidden in this mode:
 - Do NOT use execute_snowflake_sql or get_schema_summary (they are disabled).
-- Do NOT reference TPCH_SF1, CUSTOMER, ORDERS, NATION, or TPCH columns (C_CUSTKEY, O_TOTALPRICE, etc.) in SQL you write.
+- Do NOT reference raw Snowflake tables in {db} or physical column names in SQL you write.
 
 Do not use ask_cortex_analyst in this mode.
 """
 
-_CORTEX = """
+
+def _cortex_prompt() -> str:
+    return """
 Active semantic layer: CORTEX (Snowflake Semantic View + Analyst).
 
 Workflow:
@@ -66,5 +78,5 @@ Do not use wren_* tools or raw execute_snowflake_sql unless Analyst failed and y
 
 
 def get_system_prompt(mode: SemanticLayerMode) -> str:
-    suffix = {"off": _OFF, "wren": _WREN, "cortex": _CORTEX}[mode]
-    return f"{_BASE.strip()}\n{suffix.strip()}"
+    suffix = {"off": _off_prompt(), "wren": _wren_prompt(), "cortex": _cortex_prompt()}[mode]
+    return f"{_base_prompt().strip()}\n{suffix.strip()}"

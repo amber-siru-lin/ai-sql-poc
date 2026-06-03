@@ -1,3 +1,6 @@
+import pytest
+
+from config.settings import clear_settings_cache
 from src.tools.wren_sql_guard import wren_modeled_sql_violation
 
 MODELED = (
@@ -11,6 +14,13 @@ EXPANDED = (
     "SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER AS __source) "
     "SELECT customer_name FROM customer"
 )
+
+
+@pytest.fixture(autouse=True)
+def tpch_physical_scope(monkeypatch):
+    monkeypatch.setattr("config.settings.snowflake_database", lambda: "SNOWFLAKE_SAMPLE_DATA")
+    monkeypatch.setattr("config.settings.snowflake_schema", lambda: "TPCH_SF1")
+    clear_settings_cache()
 
 
 def test_modeled_sql_allowed():

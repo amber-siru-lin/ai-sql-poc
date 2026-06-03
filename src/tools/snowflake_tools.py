@@ -10,7 +10,8 @@ from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg
 
-from src.check_setup import ensure_repo_on_path, repo_root
+from config.settings import schema_markdown_path, snowflake_schema
+from src.check_setup import ensure_repo_on_path
 from src.semantic_layer.retry_policy import (
     check_sql_attempt_allowed,
     register_sql_failure,
@@ -63,8 +64,8 @@ def _load_snowflake_credentials() -> tuple[str, str, str, str, str, str]:
 
 account, user, password, warehouse, database, schema = _load_snowflake_credentials()
 
-SCHEMA_PATH = repo_root() / "schema" / "tpch_sf1.md"
-SNOWFLAKE_SCHEMA = "TPCH_SF1"
+SCHEMA_PATH = schema_markdown_path()
+SNOWFLAKE_SCHEMA = snowflake_schema()
 FORBIDDEN = re.compile(
     r"\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE)\b",
     re.I,
@@ -100,7 +101,7 @@ def execute_snowflake_sql(
     sql: str,
     config: Annotated[RunnableConfig, InjectedToolArg],
 ) -> str:
-    """Run a read-only SELECT on Snowflake TPCH_SF1. Returns columns and up to 20 rows."""
+    """Run a read-only SELECT on Snowflake. Returns columns and up to 20 rows."""
     if block := _block_unless_off_mode(config):
         return block
     if block := check_sql_attempt_allowed(config, tool_name="execute_snowflake_sql"):
@@ -116,7 +117,8 @@ def execute_snowflake_sql(
     conn = _connect()
     try:
         cur = conn.cursor()
-        cur.execute(f"USE SCHEMA {SNOWFLAKE_SCHEMA}")
+        if SNOWFLAKE_SCHEMA:
+            cur.execute(f"USE SCHEMA {SNOWFLAKE_SCHEMA}")
         cur.execute(sql)
         cols = [d[0] for d in cur.description] if cur.description else []
         rows = cur.fetchmany(20)
@@ -133,7 +135,7 @@ def execute_snowflake_sql(
 def get_schema_summary(
     config: Annotated[RunnableConfig, InjectedToolArg],
 ) -> str:
-    """Return table and column names for TPCH_SF1."""
+    """Return table and column names from the configured markdown schema."""
     if block := _block_unless_off_mode(config):
         return block
     return SCHEMA_PATH.read_text(encoding="utf-8")

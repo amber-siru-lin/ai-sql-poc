@@ -11,7 +11,7 @@ This repo compares **how the agent runs** (one-shot vs Deep Agents vs Claude SDK
 | **3** | CopilotKit UI + FastAPI AG-UI | Done |
 | **4** | Wren `main` + Cortex Analyst harness | In progress — [plan](docs/plans/2026-06-01-004-feat-wren-ai-phase-4-plan.md) |
 
-**Guides:** [docs/PHASES.md](docs/PHASES.md) · [Wren setup](wren/tpch/README.md) · [Harness comparison](docs/architecture/nl2sql-harness-comparison.md) · [Wren vs Cortex](docs/architecture/wren-vs-snowflake-cortex-analyst.md)
+See **[ONBOARDING.md](ONBOARDING.md)** — run **`./scripts/onboard.sh`** for guided setup · [SETUP.md](SETUP.md) · [docs/PHASES.md](docs/PHASES.md)
 
 ---
 
@@ -127,16 +127,24 @@ Deep dive: [NL→SQL harness comparison](docs/architecture/nl2sql-harness-compar
 
 ## Setup (all phases)
 
+**New to the repo?** Run the guided walkthrough:
+
 ```bash
-cd ~/Documents/GitHub/personal_build   # or your clone of ai-sql-poc
+./scripts/onboard.sh
+```
 
+Or use `make onboard`. Details: [ONBOARDING.md](ONBOARDING.md) · [SETUP.md](SETUP.md)
+
+Manual bootstrap:
+
+```bash
 scripts/py -m pip install -r requirements.txt
-
 cp config/snowflake_config.example.py config/snowflake_config.py
-# edit config/snowflake_config.py
+cp .env.example .env
+# edit config/snowflake_config.py and .env (AWS_PROFILE, client schema)
 
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws sso login --profile $AWS_PROFILE
+export AWS_PROFILE=your-sso-profile-name
+aws sso login --profile "$AWS_PROFILE"
 scripts/py scripts/diagnose_bedrock.py
 ```
 
@@ -192,7 +200,7 @@ cd ui && npm install && cd ..
 
 ```bash
 # Terminal 1 — API
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
+export AWS_PROFILE=your-sso-profile-name
 aws sso login --profile $AWS_PROFILE
 scripts/py scripts/sync_wren_profile.py   # once, for Wren mode
 # Wren MDL: built automatically on API startup if missing (see wren/tpch/README.md)

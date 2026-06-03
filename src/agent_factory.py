@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from deepagents import create_deep_agent
-from langchain_aws import ChatBedrock
 from langgraph.checkpoint.memory import MemorySaver
 
+from config.settings import create_bedrock_chat, dataset_label
 from src.semantic_layer.middleware import semantic_layer_system_prompt
 from src.semantic_layer.prompts import get_system_prompt
 from src.semantic_layer.types import DEFAULT_SEMANTIC_LAYER, SemanticLayerMode
@@ -15,7 +15,7 @@ from src.tools.wren_tools import wren_dry_plan, wren_memory_fetch, wren_run_sql
 
 AGENT_NAME = "nl2sql_assistant"
 AGENT_DESCRIPTION = (
-    "Snowflake TPCH analyst — natural language to SQL with optional Wren semantic layer."
+    f"{dataset_label()} analyst — natural language to SQL with optional Wren semantic layer."
 )
 
 ALL_TOOLS = [
@@ -43,7 +43,7 @@ def build_agent_graph(
     """
     if checkpointer is None:
         checkpointer = MemorySaver()
-    model = ChatBedrock(model_id="us.amazon.nova-pro-v1:0", region_name="us-east-1")
+    model = create_bedrock_chat()
     return create_deep_agent(
         model=model,
         tools=ALL_TOOLS,

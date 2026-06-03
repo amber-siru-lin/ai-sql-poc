@@ -8,8 +8,8 @@ Requires the Python API in `../api/` on port **8000** (or `VITE_API_URL` in `.en
 
 ```bash
 # Terminal 1 — API
-export AWS_PROFILE=Brainfore-Team-Set-654654461736
-aws sso login --profile $AWS_PROFILE
+export AWS_PROFILE=your-sso-profile-name
+aws sso login --profile "$AWS_PROFILE"
 cd ~/Documents/GitHub/personal_build
 scripts/py -m uvicorn api.main:app --reload --port 8000
 
